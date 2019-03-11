@@ -5,7 +5,7 @@ Team Members:
 * Fatma Faruq
 * Muhammad Sagir Yusuf
 
-##Installation
+## Installation
 ### Prerequisites
 ```
 java 8
