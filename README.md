@@ -13,3 +13,6 @@ gradle
 ```
 
 remember to install ```gradle``` by doing ```sudo apt install gradle```
+
+### Use
+run ```AMASEJavaClient``` or ```HazardDetectionJavaClient``` to have an idea of a basic client should do

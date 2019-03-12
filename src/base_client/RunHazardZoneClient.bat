@@ -1,0 +1,1 @@
+java -cp ..\..\lib\lmcplib.jar;.\ Online0JavaClient
