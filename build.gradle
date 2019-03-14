@@ -8,3 +8,10 @@ dependencies{
 
 
 }
+sourceSets{
+    main {
+        java {
+            srcDirs 'src/' // define the source folder
+        }
+    }
+}
