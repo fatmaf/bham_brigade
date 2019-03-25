@@ -307,8 +307,8 @@ public void callUAV(OutputStream out, Location3D location, int id) throws Except
      //Note: all the following attributes must be set to avoid issues
      Waypoint waypoint1 = new Waypoint();
      //Setting 3D coordinates
-     waypoint1.setLatitude(location.getLatitude()-0.000001);
-     waypoint1.setLongitude(location.getLongitude()-0.000001);
+     waypoint1.setLatitude(location.getLatitude());
+     waypoint1.setLongitude(location.getLongitude());
      waypoint1.setAltitude(100);
      waypoint1.setAltitudeType(AltitudeType.MSL);
      //Setting unique ID for the waypoint
