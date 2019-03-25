@@ -342,7 +342,7 @@ public void callUAV(OutputStream out, Location3D location, int id) throws Except
 
 
 
-//searching command
+//searching command for sag tracks
 public void sendMissionCommand(OutputStream out, int numberOfUAVs) throws Exception {
 	
 	double circleadd = 0.0;
