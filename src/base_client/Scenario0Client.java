@@ -1,3 +1,4 @@
+package base_client;
 // ===============================================================================
 // Authors: Jacob Allex-Buckner
 // Organization: University of Dayton Research Institute Applied Sensing Division
@@ -9,38 +10,8 @@
 
 // This file was auto-created by LmcpGen. Modifications will be overwritten.
 
-import afrl.cmasi.searchai.HazardZone;
-import afrl.cmasi.searchai.HazardZoneDetection;
-import afrl.cmasi.searchai.HazardZoneEstimateReport;
-import afrl.cmasi.AbstractGeometry;
-import afrl.cmasi.AirVehicleState;
-import afrl.cmasi.AltitudeType;
-import afrl.cmasi.AreaSearchTask;
-import afrl.cmasi.CommandStatusType;
-import afrl.cmasi.GimbalStareAction;
-import afrl.cmasi.GoToWaypointAction;
-import afrl.cmasi.KeepInZone;
-import afrl.cmasi.LineSearchTask;
-import afrl.cmasi.Location3D;
-import afrl.cmasi.LoiterAction;
-import afrl.cmasi.LoiterDirection;
-import afrl.cmasi.LoiterType;
-import afrl.cmasi.MissionCommand;
-import afrl.cmasi.NavigationAction;
-import afrl.cmasi.SessionStatus;
-import afrl.cmasi.SpeedType;
-import afrl.cmasi.TurnType;
-import afrl.cmasi.VehicleAction;
-import afrl.cmasi.VehicleActionCommand;
-import afrl.cmasi.WavelengthBand;
-import afrl.cmasi.Waypoint;
-import afrl.cmasi.Polygon;
-import afrl.cmasi.Rectangle;
-import afrl.cmasi.Circle;
-import avtas.lmcp.LMCPFactory;
-import avtas.lmcp.LMCPObject;
-
 import java.awt.Point;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -51,12 +22,31 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilderFactory;
 
-import java.io.ByteArrayInputStream;
+import org.w3c.dom.Document;
+
+import base_client.avtas.lmcp.LMCPFactory;
+import base_client.avtas.lmcp.LMCPObject;
+import base_client.cmasi.AirVehicleState;
+import base_client.cmasi.AltitudeType;
+import base_client.cmasi.AreaSearchTask;
+import base_client.cmasi.CommandStatusType;
+import base_client.cmasi.KeepInZone;
+import base_client.cmasi.Location3D;
+import base_client.cmasi.LoiterAction;
+import base_client.cmasi.LoiterDirection;
+import base_client.cmasi.LoiterType;
+import base_client.cmasi.MissionCommand;
+import base_client.cmasi.Polygon;
+import base_client.cmasi.Rectangle;
+import base_client.cmasi.VehicleActionCommand;
+import base_client.cmasi.WavelengthBand;
+import base_client.cmasi.Waypoint;
+import base_client.cmasi.searchai.HazardZone;
+import base_client.cmasi.searchai.HazardZoneDetection;
+import base_client.cmasi.searchai.HazardZoneEstimateReport;
 
 /**
  * Connects to the simulation and sends a fake mission command to every UAV that
@@ -533,12 +523,12 @@ public class Scenario0Client extends Thread {
 		if (o.toString().contains("Hazard"))
 			if (o.toString().contains("Zone"))
 				System.out.println();
-		if (o instanceof afrl.cmasi.searchai.HazardZone) {
+		if (o instanceof base_client.cmasi.searchai.HazardZone) {
 			processHazardZone((HazardZone) o);
 //			}
 		}
 		// Check if the message is a HazardZoneDetection
-		else if (o instanceof afrl.cmasi.searchai.HazardZoneDetection) {
+		else if (o instanceof base_client.cmasi.searchai.HazardZoneDetection) {
 			HazardZoneDetection hazardDetected = ((HazardZoneDetection) o);
 			// Get location where zone first detected
 			Location3D detectedLocation = hazardDetected.getDetectedLocation();
@@ -581,7 +571,7 @@ public class Scenario0Client extends Thread {
 			}
 //			System.out.println(hazardLocations.toString());
 
-		} else if (o instanceof afrl.cmasi.AirVehicleState) {
+		} else if (o instanceof base_client.cmasi.AirVehicleState) {
 			AirVehicleState uavState = ((AirVehicleState) o);
 			long id = uavState.getID();
 			Location3D loc = uavState.getLocation();
@@ -590,7 +580,7 @@ public class Scenario0Client extends Thread {
 			// send uav2 left
 			// send uav3 up left
 
-		} else if (o instanceof afrl.cmasi.KeepInZone) {
+		} else if (o instanceof base_client.cmasi.KeepInZone) {
 			KeepInZone boundary = ((KeepInZone) o);
 			setLimitsUsingKeepInZone(boundary);
 //			System.out.println(boundary.toString());
@@ -630,12 +620,12 @@ public class Scenario0Client extends Thread {
 		o.setEstimatedZoneShape(estimatedShape);
 		o.setUniqueTrackingID(1);
 		o.setEstimatedGrowthRate(0);
-		o.setPerceivedZoneType(afrl.cmasi.searchai.HazardType.Fire);
+		o.setPerceivedZoneType(base_client.cmasi.searchai.HazardType.Fire);
 		o.setEstimatedZoneDirection(0);
 		o.setEstimatedZoneSpeed(0);
 
 		// Sending the Vehicle Action Command message to AMASE to be interpreted
-		out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+		out.write(base_client.avtas.lmcp.LMCPFactory.packMessage(o, true));
 	}
 
 	/**
@@ -668,7 +658,7 @@ public class Scenario0Client extends Thread {
 		o.getVehicleActionList().add(loiterAction);
 		vehicleCommands.put(vehicleId, o);
 		// Sending the Vehicle Action Command message to AMASE to be interpreted
-		out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+		out.write(base_client.avtas.lmcp.LMCPFactory.packMessage(o, true));
 	}
 
 	/**
@@ -701,7 +691,7 @@ public class Scenario0Client extends Thread {
 		o.getVehicleActionList().add(loiterAction);
 
 		// Sending the Vehicle Action Command message to AMASE to be interpreted
-		out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+		out.write(base_client.avtas.lmcp.LMCPFactory.packMessage(o, true));
 
 	}
 
@@ -733,7 +723,7 @@ public class Scenario0Client extends Thread {
 		mc.setFirstWaypoint(vehicleId);
 		mc.getWaypointList().add(wp);
 		vehicleCommands.put(vehicleId, mc);
-		out.write(avtas.lmcp.LMCPFactory.packMessage(mc, true));
+		out.write(base_client.avtas.lmcp.LMCPFactory.packMessage(mc, true));
 	}
 
 	public void sendToWayPoint(OutputStream out, long vehicleId, Location3D location) throws Exception {
@@ -753,7 +743,7 @@ public class Scenario0Client extends Thread {
 		mc.setFirstWaypoint(1);
 		mc.getWaypointList().add(wp);
 		vehicleCommands.put(vehicleId, mc);
-		out.write(avtas.lmcp.LMCPFactory.packMessage(mc, true));
+		out.write(base_client.avtas.lmcp.LMCPFactory.packMessage(mc, true));
 	}
 
 	public void setLimitsUsingKeepInZone(KeepInZone keepinzone) throws Exception {

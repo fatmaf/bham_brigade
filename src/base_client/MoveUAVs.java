@@ -1,3 +1,4 @@
+package base_client;
 // ===============================================================================
 // Authors: Jacob Allex-Buckner
 // Organization: University of Dayton Research Institute Applied Sensing Division
@@ -9,27 +10,27 @@
 
 // This file was auto-created by LmcpGen. Modifications will be overwritten.
 
-import afrl.cmasi.searchai.HazardZoneDetection;
-import afrl.cmasi.searchai.HazardZoneEstimateReport;
-import afrl.cmasi.AirVehicleState;
-import afrl.cmasi.AltitudeType;
-import afrl.cmasi.CommandStatusType;
-import afrl.cmasi.GimbalStareAction;
-import afrl.cmasi.Location3D;
-import afrl.cmasi.LoiterAction;
-import afrl.cmasi.LoiterDirection;
-import afrl.cmasi.LoiterType;
-import afrl.cmasi.MissionCommand;
-import afrl.cmasi.SessionStatus;
-import afrl.cmasi.SpeedType;
-import afrl.cmasi.TurnType;
-import afrl.cmasi.VehicleAction;
-import afrl.cmasi.VehicleActionCommand;
-import afrl.cmasi.Waypoint;
-import afrl.cmasi.Polygon;
-import afrl.cmasi.Circle;
-import avtas.lmcp.LMCPFactory;
-import avtas.lmcp.LMCPObject;
+import base_client.cmasi.searchai.HazardZoneDetection;
+import base_client.cmasi.searchai.HazardZoneEstimateReport;
+import base_client.cmasi.AirVehicleState;
+import base_client.cmasi.AltitudeType;
+import base_client.cmasi.CommandStatusType;
+import base_client.cmasi.GimbalStareAction;
+import base_client.cmasi.Location3D;
+import base_client.cmasi.LoiterAction;
+import base_client.cmasi.LoiterDirection;
+import base_client.cmasi.LoiterType;
+import base_client.cmasi.MissionCommand;
+import base_client.cmasi.SessionStatus;
+import base_client.cmasi.SpeedType;
+import base_client.cmasi.TurnType;
+import base_client.cmasi.VehicleAction;
+import base_client.cmasi.VehicleActionCommand;
+import base_client.cmasi.Waypoint;
+import base_client.cmasi.Polygon;
+import base_client.cmasi.Circle;
+import base_client.avtas.lmcp.LMCPFactory;
+import base_client.avtas.lmcp.LMCPObject;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -175,7 +176,7 @@ public class MoveUAVs extends Thread {
 		o.getVehicleActionList().add(loiterAction);
 
 		// Sending the Vehicle Action Command message to AMASE to be interpreted
-		out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+		out.write(base_client.avtas.lmcp.LMCPFactory.packMessage(o, true));
 	}
 
 	/**
@@ -190,12 +191,12 @@ public class MoveUAVs extends Thread {
 		o.setEstimatedZoneShape(estimatedShape);
 		o.setUniqueTrackingID(1);
 		o.setEstimatedGrowthRate(0);
-		o.setPerceivedZoneType(afrl.cmasi.searchai.HazardType.Fire);
+		o.setPerceivedZoneType(base_client.cmasi.searchai.HazardType.Fire);
 		o.setEstimatedZoneDirection(0);
 		o.setEstimatedZoneSpeed(0);
 
 		// Sending the Vehicle Action Command message to AMASE to be interpreted
-		out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+		out.write(base_client.avtas.lmcp.LMCPFactory.packMessage(o, true));
 	}
 
 	/**
@@ -205,7 +206,7 @@ public class MoveUAVs extends Thread {
 		// Use each of the if statements to use the incoming message
 		LMCPObject o = LMCPFactory.getObject(in);
 		
-		if (o instanceof afrl.cmasi.AirVehicleState) {
+		if (o instanceof base_client.cmasi.AirVehicleState) {
 			AirVehicleState uavState = ((AirVehicleState) o);
 		
 			Location3D uavLocation = uavState.getLocation();
@@ -214,7 +215,7 @@ public class MoveUAVs extends Thread {
 		}
 		// Check if the message is a HazardZoneDetection
 
-		if (o instanceof afrl.cmasi.searchai.HazardZoneDetection) {
+		if (o instanceof base_client.cmasi.searchai.HazardZoneDetection) {
 			HazardZoneDetection hazardDetected = ((HazardZoneDetection) o);
 			// Get location where zone first detected
 			Location3D detectedLocation = hazardDetected.getDetectedLocation();
