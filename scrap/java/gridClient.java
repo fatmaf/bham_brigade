@@ -132,6 +132,7 @@ public class gridClient extends Thread {
 		public uavInfo(long id) {
 			this.id = id;
 		}
+		
 	}
 
 	Socket socket;
