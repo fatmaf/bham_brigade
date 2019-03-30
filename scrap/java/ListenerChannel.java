@@ -1,5 +1,4 @@
 
-
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -13,13 +12,11 @@ public class ListenerChannel {
 		_context = new ZContext();
 		socket = _context.createSocket(SocketType.SUB);
 		socket.connect("tcp://localhost:5556");
-//		socket.connect("tcp://localhost:8097");
 		String filter = "";
 		socket.subscribe(filter.getBytes(ZMQ.CHARSET));
 	}
 
 	public static void main(String[] args) {
-		
 		final ListenerChannel listenerChannel = new ListenerChannel();
 		listenerChannel.run(x -> {
 			System.out.println("Received update at simulation time :" + x.getTime());
