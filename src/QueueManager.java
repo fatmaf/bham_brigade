@@ -1,7 +1,11 @@
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
+
+import afrl.cmasi.Location3D;
 
 public class QueueManager {
 	
@@ -13,11 +17,11 @@ public class QueueManager {
 		this.fireTasks = new ArrayList<>();
 	}
 	
-	public Task getNextSearchTask() {
+	private Task getNextSearchTask() {
 		return this.searchTasks.remove(0);
 	}
 	
-	public Task getNextFireTask() {
+	private Task getNextFireTask() {
 		return this.fireTasks.remove(0);
 	}
 	
@@ -29,6 +33,20 @@ public class QueueManager {
 	public void addNewFireTask(Task t) {
 		fireTasks.add(t);
 		Collections.sort(fireTasks);
+	}
+	
+	public void notifyOfFire(Task currentTask, Location3D location) {
+		currentTask.setTaskType(Task.TaskType.MAP);
+		currentTask.setTargetLocation(location);
+		addNewFireTask(currentTask);
+	}
+	
+	public void setupWithCells(HashMap<Point, HashMap<String, Location3D>> points) {
+		// public Task(TaskType type, Location3D startSearch, Location3D endSearch, float priority) 
+		for(Point p: points.keySet()) {
+			Task t = new Task(Task.TaskType.SEARCH, points.get(p).get("Low"), points.get(p).get("High"), 50);
+			addNewSearchTask(t);
+		}
 	}
 	
 	public Task requestNewTask(UAVInfo uav) {
