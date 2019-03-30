@@ -60,7 +60,7 @@ public class UnknownSearch extends Thread {
 	boolean[] uavsLoiter = new boolean[4];
 	Polygon estimatedHazardZone = new Polygon();
 	// that is the number of faster drones to conduct the fast search
-	int numberOfUAVsSearch = 4;
+	int numberOfUAVsSearch = 2;
 	Boolean sendMissionCommand = true;
 	double clat = 53.3783;
 	double clongt = -1.7616;
