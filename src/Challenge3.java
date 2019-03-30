@@ -35,12 +35,17 @@ import java.util.Random;
 
 public class Challenge3 extends Thread {
 
+    enum State {
+    	SEARCHING,
+    	MAPPING
+    }
     /** simulation TCP port to connect to */
     private static int port = 5555;
     /** address of the server */
     private static String host = "localhost";
     /**Array of booleans indicating if loiter command has been sent to each UAV */
-    HashMap<Long, ArrayList<Boolean>> state = new HashMap<>();
+    HashMap<Long, ArrayList<Boolean>> flags = new HashMap<>();
+    HashMap<Long, State> state = new HashMap<>();
     HashMap<Long, Boolean> searching = new HashMap<>();
     Polygon hazardPolygon = new Polygon();
     HashMap<Long, Location3D> detectedLocs = new HashMap<>();
@@ -49,12 +54,21 @@ public class Challenge3 extends Thread {
     HashMap<Long, Boolean> hasTurned = new HashMap<>();
     Location3D low_loc;
     Location3D high_loc;
+    ArrayList<UAVInfo> uavs = new ArrayList<>();
+    
+    QueueManager qm = new QueueManager();
+    
+
     
     @Override
     public void run() {
         try {
             // connect to the server
             Socket socket = connect(host, port);
+            
+            // getSearchCells();
+            //qm.setupWithCells(points);
+            
 
             while(true) {
                 //Continually read the LMCP messages that AMASE is sending out
@@ -62,7 +76,7 @@ public class Challenge3 extends Thread {
             }
 
         } catch (Exception ex) {
-            Logger.getLogger(Challenge3.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(challenge2.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -75,28 +89,31 @@ public class Challenge3 extends Thread {
         if (o instanceof afrl.cmasi.AirVehicleState) {
         	AirVehicleState avs = ((AirVehicleState)o);
         	long id = avs.getID();
-        	if(!state.containsKey(id)) {
+        	UAVInfo currentUAV = getUAVInfo(id);
+        	if(!flags.containsKey(id)) {
         		initialise_uav(id, avs, out);
         	}
-
-        	if(!searching.get(id)) {
-        		if(state.get(id).get(0) != state.get(id).get(1)) {
-        			hazardPolygon.getBoundaryPoints().add(detectedLocs.get(id));
-        			//sendEstimateReport(out);
-        		}
-        		changeHeading(avs, id, out);
+        	
+    		if(flags.get(id).get(0) != flags.get(id).get(1)) { // Crossed boundary
+    			if(currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) { // if(
+    				changeHeading(avs, id, out);
+    			} else if(currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
+    				qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id));
+    				currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
+    				
+    			} else {
+    				// Refuel
+    			}
+        		
         	} else {
-        		if(!checkValidPos(avs, id)) {
-        			if(!hasTurned.containsKey(id) || !hasTurned.get(id)) {
-        				reverseHeading(avs, id, out);
-        				hasTurned.put(id, true);
-        				System.out.println("reversing");
-        			}
-        		} else {
-        			if(hasTurned.containsKey(id)) {
-        				hasTurned.remove(id);
-        			}
-        		}
+        		if(currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
+    				changeHeading(avs, id, out);
+    			} else if(currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
+    				// if(isTaskFinished())
+    				currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
+    			} else {
+    				// Refuel
+    			}
         	}
         }
 
@@ -112,61 +129,27 @@ public class Challenge3 extends Thread {
         }
     }
     
-    public void reverseHeading(AirVehicleState avs, long id, OutputStream out) throws IOException, Exception {
- 
-    	VehicleActionCommand vac = new VehicleActionCommand();
-    	vac.setVehicleID(id);
-    	vac.setStatus(CommandStatusType.Pending);
-    	vac.setCommandID(1);
 
-    	int h;
-    	if(id == 1 || id == 2){
-    		h = 90;
-    	} else {
-    		h = -90;
-    	}
-    	FlightDirectorAction fda = new FlightDirectorAction();
-    	fda.setHeading(avs.getHeading()+h);
-    	vac.getVehicleActionList().add(fda);
-
-    	out.write(avtas.lmcp.LMCPFactory.packMessage(vac, true));
-    	
-    	state.get(id).set(1, state.get(id).get(0));
-    	state.get(id).set(0, false);
+    public Boolean isTaskFinished(AirVehicleState avs, State state) {
+    	return false;
     }
     
-    public double computeDistance(double lat1, double lat2, double longt1, double longt2) {
-   //I want use haversine formula a = sinsqr(dtheta)+costheta1+costheta2.sinsqr(dtheta)    
-       // c = 2.atan2(sqrta, sqrt1-a)
-       //d= R.c
-       /*
-        * double theta1 = Math.toRadians(lat1);
-       double theta2 = Math.toRadians(lat2);
-       double dtheta = Math.toRadians(lat2-lat1);
-       double dlambda = Math.toRadians(longt2-longt1);
-        * */
-       
-       double R = 6371e3; //radius of earth in meters
-       double theta1 = lat1;
-       double theta2 = lat2;
-       double dtheta = lat2-lat1;
-       double dlambda = longt2-longt1;
-       double a = Math.sin(dtheta/2)*Math.sin(dtheta/2) +
-                  Math.cos(theta1)*Math.cos(theta2) +
-                  Math.sin(dlambda/2) * Math.sin(dlambda/2);
-       double c = 2* Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-       //double c = 2* Math.asin(Math.sqrt(a));
-       double d = R*c;
-       return d;
-
-   }
+    public UAVInfo getUAVInfo(long id) {
+    	for(UAVInfo uav : uavs) {
+    		if(uav.id == id) {
+    			return uav; // COULD CAUSE AN ERROR
+    		}
+    	}
+    	return null;
+    }
 
     public void initialise_uav(long id, AirVehicleState avs, OutputStream out) throws IOException, Exception {
     	ArrayList<Boolean> l = new ArrayList<>();
     	l.add(false);
     	l.add(false);
-    	state.put(id, l);
-    	searching.put(id, true);
+    	flags.put(id, l);
+    	//state.put(id, State.SEARCHING);
+    	uavs.add(new UAVInfo(id));
     	setInitialHeading(id, out, false);
     }
     
@@ -198,14 +181,14 @@ public class Challenge3 extends Thread {
 
     	out.write(avtas.lmcp.LMCPFactory.packMessage(vac, true));
     	
-    	state.get(id).set(1, state.get(id).get(0));
-    	state.get(id).set(0, false);
+    	flags.get(id).set(1, flags.get(id).get(0));
+    	flags.get(id).set(0, false);
     	
     }
 
     public void changeHeading(AirVehicleState avs, long id, OutputStream out) throws IOException, Exception {
     	int heading;
-    	if(state.get(id).get(0)) {
+    	if(flags.get(id).get(0)) {
     		heading = 100;
     	} else {
     		heading = -100;
@@ -222,8 +205,8 @@ public class Challenge3 extends Thread {
 
     	out.write(avtas.lmcp.LMCPFactory.packMessage(vac, true));
     	
-    	state.get(id).set(1, state.get(id).get(0));
-    	state.get(id).set(0, false);
+    	flags.get(id).set(1, flags.get(id).get(0));
+    	flags.get(id).set(0, false);
 
     }
 
@@ -232,7 +215,7 @@ public class Challenge3 extends Thread {
     	if(id == 2 || id == 3) {
     		System.out.println("here");
     	}
-    	state.get(id).set(0, true);
+    	flags.get(id).set(0, true);
     	detectedLocs.put(id, hzd.getDetectedLocation());
     	
     	if(searching.containsKey(id)) {
@@ -336,3 +319,40 @@ public class Challenge3 extends Thread {
         new Challenge3().start();
     }
 }
+
+
+/*if(!checkValidPos(avs, id)) {
+if(!hasTurned.containsKey(id) || !hasTurned.get(id)) {
+	reverseHeading(avs, id, out);
+	hasTurned.put(id, true);
+	System.out.println("reversing");
+}
+} else {
+if(hasTurned.containsKey(id)) {
+	hasTurned.remove(id);
+}
+}*/
+
+
+/*public void reverseHeading(AirVehicleState avs, long id, OutputStream out) throws IOException, Exception {
+
+VehicleActionCommand vac = new VehicleActionCommand();
+vac.setVehicleID(id);
+vac.setStatus(CommandStatusType.Pending);
+vac.setCommandID(1);
+
+int h;
+if(id == 1 || id == 2){
+h = 90;
+} else {
+h = -90;
+}
+FlightDirectorAction fda = new FlightDirectorAction();
+fda.setHeading(avs.getHeading()+h);
+vac.getVehicleActionList().add(fda);
+
+out.write(avtas.lmcp.LMCPFactory.packMessage(vac, true));
+
+flags.get(id).set(1, flags.get(id).get(0));
+flags.get(id).set(0, false);
+}*/
