@@ -58,8 +58,6 @@ public class UnknownSearch extends Thread {
     Boolean sendMissionCommand = true;
     double clat = 53.3783;
     double clongt = -1.7616;
-    Boolean slow = true;
-    Boolean slow2 = true;
     
     public UnknownSearch() {
     	
@@ -84,15 +82,9 @@ public class UnknownSearch extends Thread {
             	
             
             searchMissionParallel(socket.getOutputStream(),numberOfUAVsSearch);
-            if(slow==true) {
             
+            UAV4(socket.getOutputStream());
             UAV3(socket.getOutputStream());
-            }
-            
-            if(slow2==true) {
-                UAV4(socket.getOutputStream());
-                
-                }
             
             }
             
@@ -1322,12 +1314,12 @@ public void readMessages(InputStream in, OutputStream out) throws Exception {
         	if(i!=detectingEntity && i !=detectingEntity) {
         
         		if(i==1) {
-        			slow = false;
+        			//sendMissionCommand = false;
        callUAV(out, detectedLocation, 3);
        
         		}
         		else {
-        			slow2 = false;
+        			//sendMissionCommand = false;
         			callUAV(out, detectedLocation, 4);	
         			
         		}
