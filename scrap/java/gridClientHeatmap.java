@@ -47,26 +47,27 @@ import java.util.logging.Logger;
  * is requested in the plan request.
  */
 public class gridClientHeatmap extends Thread {
-
-
+	private static final double locError = 10;//in meters
 	public class Grid {
-		
-		boolean isProtoBufGrid = false ;
+
+	
+		boolean isProtoBufGrid = false;
 		boolean gridInitialised = false;
 		double lat_high;
 		double lat_low;
 		double lon_high;
 		double lon_low;
 
-		double cellRadiusLat;
-		double cellRadiusLon;
+		double cellIncLat;
+		double cellIncLon;
 		double numCellsLat;
 		double numCellsLon;
-		double[][] heatmap = null; 
-		public Grid(int numCellsLat, int numCellsLon,boolean isProtobuf) {
+		double[][] heatmap = null;
+
+		public Grid(int numCellsLat, int numCellsLon, boolean isProtobuf) {
 			this.numCellsLat = numCellsLat;
 			this.numCellsLon = numCellsLon;
-			this.isProtoBufGrid = isProtobuf; 
+			this.isProtoBufGrid = isProtobuf;
 
 		}
 
@@ -82,14 +83,14 @@ public class gridClientHeatmap extends Thread {
 			lon_high = max_lon;// high_loc.getLongitude();
 			lon_low = min_lon;// low_loc.getLongitude();
 
-			cellRadiusLat = (lat_high - lat_low) / (double) numCellsLat;
-			cellRadiusLon = (lon_high - lon_low) / (double) numCellsLon;
+			cellIncLat = (lat_high - lat_low) / (double) numCellsLat;
+			cellIncLon = (lon_high - lon_low) / (double) numCellsLon;
 			gridInitialised = true;
 		}
 
 		public Point locationToGrid(Location3D loc) {
-			int xloc = (int) ((loc.getLongitude() - lon_low) / cellRadiusLon);
-			int yloc = (int) ((loc.getLatitude() - lat_low) / cellRadiusLat);
+			int xloc =(int)Math.floor(((loc.getLongitude() - lon_low) / cellIncLon));
+			int yloc = (int)Math.floor( ((loc.getLatitude() - lat_low) / cellIncLat));
 
 			// si*i + sj*j
 			Point toret = new Point(xloc, yloc);
@@ -98,25 +99,115 @@ public class gridClientHeatmap extends Thread {
 
 		public Location3D pointToLocation(Point cell) {
 			Location3D location = new Location3D();
-			double lat = ((double) cell.y) * cellRadiusLat + lat_low;
-			double lon = ((double) cell.x) * cellRadiusLon + lon_low;
+			double lat = ((double) cell.y) * cellIncLat + lat_low;
+			double lon = ((double) cell.x) * cellIncLon + lon_low;
 			location.setLongitude(lon);
 			location.setLatitude(lat);
 			location.setAltitude(200);
-			location.setAltitudeType(AltitudeType.AGL); 
+			location.setAltitudeType(AltitudeType.AGL);
 //			System.out.println("Cell " + cell.toString() + " = [lon:" + lon + " " + (lon + cellRadiusLon) + ",lat:" + lat
 //					+ " " + (lat + cellRadiusLat) + "]");
 			return location;
 		}
 
+		public Location3D createUpperBoundLocation(Location3D location) {
+			Location3D loc = new Location3D(location.getLatitude() + cellIncLat,
+					location.getLongitude() + cellIncLon, location.getAltitude(), location.getAltitudeType());
+
+			return loc;
+		}
+
+		ArrayList<Location3D> getLocTopBottom(Point cell) {
+			Location3D loc1 = pointToLocation(cell);
+			Location3D loc2 = createUpperBoundLocation(loc1);
+			ArrayList<Location3D> arr = new ArrayList<Location3D>();
+			arr.add(loc1);
+			arr.add(loc2);
+			return arr;
+		}
+
+		
 		boolean locInGridPoint(Location3D loc, Point cell) {
 			Location3D testLoc = pointToLocation(cell);
+			// so if they're in some distance of each other,
+			// we're in that location
+			boolean isLatNeg = testLoc.getLatitude() < 0;
+			boolean isLonNeg = testLoc.getLongitude() < 0;
+			double latLimLow, latLimHigh, lonLimLow, lonLimHigh;
+			if (isLatNeg) {
+				if (cellIncLat > 0) {
+					latLimHigh = testLoc.getLatitude() +cellIncLat;
+					latLimLow = testLoc.getLatitude() - cellIncLat;
+				} else {
+					latLimHigh = testLoc.getLatitude() - cellIncLat;
+					latLimLow = testLoc.getLatitude() + cellIncLat;
+				}
+			} else {
+				if (cellIncLat > 0) {
+					latLimHigh = testLoc.getLatitude() + cellIncLat;
+					latLimLow = testLoc.getLatitude() - cellIncLat;
+				} else {
+					latLimHigh = testLoc.getLatitude() - cellIncLat;
+					latLimLow = testLoc.getLatitude() + cellIncLat;
+				}
+			}
+			if (isLonNeg) {
+				if (cellIncLon > 0) {
+					lonLimHigh = testLoc.getLongitude() + cellIncLon;
+					lonLimLow = testLoc.getLongitude() -cellIncLon;
+				} else {
+					lonLimHigh = testLoc.getLongitude() - cellIncLon;
+					lonLimLow = testLoc.getLongitude() +cellIncLon;
+				}
+			} else {
+				if (cellIncLon > 0) {
+					lonLimHigh = testLoc.getLongitude() + cellIncLon;
+					lonLimLow = testLoc.getLongitude() - cellIncLon;
+				} else {
+					lonLimHigh = testLoc.getLongitude() - cellIncLon;
+					lonLimLow = testLoc.getLongitude() + cellIncLon;
+				}
+			}
+
 //			System.out.println("Current:"+testLoc.toString()+" target:"+cell.toString()); 
-			boolean isLatInLimit = loc.getLatitude() > testLoc.getLatitude()
-					&& loc.getLatitude() < (testLoc.getLatitude() + cellRadiusLat);
-			boolean isLonInLimit = loc.getLongitude() < testLoc.getLongitude()
-					&& loc.getLongitude() > (testLoc.getLongitude() + cellRadiusLon);
+			boolean isLatInLimit = doComparision(loc.getLatitude(), latLimLow, latLimHigh);
+			boolean isLonInLimit = doComparision(loc.getLongitude(), lonLimLow, lonLimHigh);
 			return (isLatInLimit && isLonInLimit);
+		}
+
+		boolean doComparision(double p, double low, double high) {
+			// lim2 > lim1
+			return p >= low && p <= high;
+		}
+		// so if we have a resolution
+		// and its not a heatmap
+		// then you do nothing
+		// cell(0,0) = cells (0,0) through (res,res)
+		// cell(1,0) = cells(res,0) through (res+res,res)
+		// so basically cell(x,y) = cells(x*res,y*res) through (x*res+res,y*res+res)
+
+		ArrayList<Point> gridToheatMap(Point gridPoint, int res) {
+			ArrayList<Point> pts = new ArrayList<Point>();
+
+			int x = (int) (gridPoint.getX() * res);
+			int y = (int) (gridPoint.getY() * res);
+			Point p1 = new Point(x, y);
+			x = x + res;
+			y = y + res;
+			Point p2 = new Point(x, y);
+			pts.add(p1);
+			pts.add(p2);
+			return pts;
+
+		}
+
+		// heatmappoint = (x,y)
+		// grid point = floor(x/res, y/res)
+		Point heatMapToGrid(Point heatMapPoint, int res) {
+			int x = (int) heatMapPoint.getX() / res;
+			int y = (int) heatMapPoint.getY() / res;
+			Point gridPoint = new Point(x, y);
+			return gridPoint;
 		}
 
 	}
@@ -130,30 +221,28 @@ public class gridClientHeatmap extends Thread {
 		String entityType;
 		VehicleActionCommand currentCommand = null;
 		Location3D targetLocation = null;
-		Point currentCell = null; 
-		Point commandCell= null; 
-		
+		Point currentCell = null;
+		Point commandCell = null;
+
 		public uavInfo(long id) {
 			this.id = id;
 		}
 	}
 
+	int startPointX = 1;
+	int startPointY = 1;
 	Socket socket;
 	private static final float LoiterRadius = 250;
 
 	private static final long LoiterDuration = 10000;
-	ListenerChannel listenerChannel; 
+	ListenerChannel listenerChannel;
 	/** simulation TCP port to connect to */
 	private static int port = 5555;
 	/** address of the server */
 	private static String host = "localhost";
 	/** Array of booleans indicating if loiter command has been sent to each UAV */
 	boolean[] uavsLoiter = new boolean[4];
-//	HashMap<Long, Point> uavsOnGrid = new HashMap<Long, Point>();
 	boolean canMove = false;
-//	HashMap<Long, Location3D> uavLocations = new HashMap<Long, Location3D>();
-//	HashMap<Long, VehicleActionCommand> vehicleCommands = new HashMap<Long, VehicleActionCommand>();
-//	HashMap<Long, Point> commandLocations = new HashMap<Long,Point>();
 	Polygon estimatedHazardZone = new Polygon();
 	int numUAVs = 4;
 	HashMap<Long, uavInfo> uavs;
@@ -162,8 +251,9 @@ public class gridClientHeatmap extends Thread {
 	final double R = 6372.8 * 1000; // In kilometers
 	ArrayList<RecoveryPoint> fuelLocations;
 	Grid grid;
-	Grid heatmapGrid; 
+	Grid heatmapGrid;
 	boolean startMovement = false;
+	double gridGranularityRelativeToHeatMapSide = 4;
 
 	boolean uavsHashMapHasSpeedForAll() {
 		int numSpeed = 0;
@@ -183,37 +273,24 @@ public class gridClientHeatmap extends Thread {
 		return numLoc == numUAVs;
 	}
 
-	
 	public gridClientHeatmap() {
 		uavs = new HashMap<Long, uavInfo>();
 		fuelLocations = new ArrayList<RecoveryPoint>();
-		heatmapGrid = null; 
+		heatmapGrid = null;
 //		grid = new Grid(100,100,false);
 		listenerChannel = new ListenerChannel();
 		listenerChannel.run(x -> {
-			//System.out.println("Received update at simulation time :" + x.getTime());
-			if(heatmapGrid == null) {
-			final int rows = x.getSize(0);
-			final int columns = x.getSize(1);
-			grid = new Grid(columns,rows,false); 
-			heatmapGrid = new Grid(columns,rows,true);
-			heatmapGrid.initialiseGrid(x.getMaxLat(), x.getMinLat(), x.getMaxLong(), x.getMinLong());
-			grid.initialiseGrid(x.getMaxLat(), x.getMinLat(), x.getMaxLong(), x.getMinLong());
-			heatmapGrid.heatmap = new double[rows][columns];
-			int index = 0;
-			for (int i = 0; i < rows; i++)
-				for (int j = 0; j < columns; j++) {
-					heatmapGrid.heatmap[i][j] = x.getMap(index);
-					index++;
-				}
-			
-//			System.out.println(heatmap);
-			}
-			else
-			{
-				int rows = (int)heatmapGrid.numCellsLon; 
-				int columns = (int)heatmapGrid.numCellsLat;
-				//update heatmap only 
+//			System.out.println("Received update at simulation time :" + x.getTime());
+			if (heatmapGrid == null) {
+				final int rows = x.getSize(0);
+				final int columns = x.getSize(1);
+				grid = new Grid((int) (columns / this.gridGranularityRelativeToHeatMapSide),
+						(int) (rows / this.gridGranularityRelativeToHeatMapSide), false);
+				this.startPointX = (int) grid.numCellsLon - 1;
+				this.startPointY = (int) grid.numCellsLat - 1;
+				heatmapGrid = new Grid(columns, rows, true);
+				heatmapGrid.initialiseGrid(x.getMaxLat(), x.getMinLat(), x.getMaxLong(), x.getMinLong());
+				grid.initialiseGrid(x.getMaxLat(), x.getMinLat(), x.getMaxLong(), x.getMinLong());
 				heatmapGrid.heatmap = new double[rows][columns];
 				int index = 0;
 				for (int i = 0; i < rows; i++)
@@ -221,15 +298,36 @@ public class gridClientHeatmap extends Thread {
 						heatmapGrid.heatmap[i][j] = x.getMap(index);
 						index++;
 					}
-				
+
+//			System.out.println(heatmap);
+			} else {
+				int rows = (int) heatmapGrid.numCellsLon;
+				int columns = (int) heatmapGrid.numCellsLat;
+				// update heatmap only
+				heatmapGrid.heatmap = new double[rows][columns];
+				int index = 0;
+				for (int i = 0; i < rows; i++)
+					for (int j = 0; j < columns; j++) {
+						heatmapGrid.heatmap[i][j] = x.getMap(index);
+						index++;
+					}
+
 			}
 		});
 
 	}
+	boolean closeEnough(Location3D loc1, Location3D loc2)
+	{
+		double dist = Math.abs(haversine(loc1,loc2));
+		if (dist < locError)
+		{
+			return true; 
+		}
+		return false; 
+	}
 
 	public void setLimitsUsingKeepInZone(KeepInZone keepinzone) throws Exception {
 
-		
 		Rectangle bounds = (Rectangle) keepinzone.getBoundary();
 
 		setLimitsUsingRect(bounds);
@@ -264,8 +362,15 @@ public class gridClientHeatmap extends Thread {
 		}
 		Location3D low_loc = newLocation(centerPoint, w / -2f, h / -2f);
 		Location3D high_loc = newLocation(centerPoint, w / 2f, h / 2f);
+		if (grid == null) {
+			grid = new Grid(100, 100, false);
+		}
 		grid.initialiseGrid(high_loc.getLatitude(), low_loc.getLatitude(), high_loc.getLongitude(),
 				low_loc.getLongitude());
+		this.startPointX = (int) grid.numCellsLon - 1;
+		this.startPointY = (int) grid.numCellsLat- 1;
+		System.out.println("Initial Locations");
+		System.out.println(this.startPointX+":"+this.startPointY);
 
 	}
 
@@ -330,7 +435,7 @@ public class gridClientHeatmap extends Thread {
 			if (this.allLocationsSaved && this.allSpeedsSaved) {
 				System.out.println("Can Move Now");
 				canMove = true;
-				//print all the locations 
+				// print all the locations
 //				System.out.println(this.uavsOnGrid.toString()); 
 //				System.out.println(this.uavLocations.toString());
 			}
@@ -348,7 +453,9 @@ public class gridClientHeatmap extends Thread {
 				readMessages(socket.getInputStream(), socket.getOutputStream());
 				okayMovement();
 				if (canMove)
-					goAround();
+				{	goAround();
+					
+				}
 
 			}
 
@@ -358,17 +465,40 @@ public class gridClientHeatmap extends Thread {
 	}
 
 	public void goAround() throws Exception {
+		int inc = 5;
+		for (long id : uavs.keySet()) {
+			if (canMove(id)) {
+				System.out.println(this.startPointX+":"+this.startPointY);
+				sendWaypointCommand(id, new Point(this.startPointX, this.startPointY), 30);
+				this.startPointX -= inc;
+				if (this.startPointX <=0) {
+					this.startPointY -= inc;
+					this.startPointX = (int) (grid.numCellsLat - 1);
+				}
+				System.out.println(this.startPointX+":"+this.startPointY);
+			}
+		}
+
+//		for (long id:uavs.keySet())
+//		{
+//			//print out the grid loc 
+//			//print out the heatmap loc 
+//			System.out.println(id+":Grid"+uavs.get(id).currentCell.toString()); 
+//			if(heatmapGrid != null)
+//			System.out.println(id+":Grid"+heatmapGrid.gridToheatMap(uavs.get(id).currentCell,(int)this.gridGranularityRelativeToHeatMapSide).toString()); 
+//		}
+
 //		System.out.println("Going Around"); 
 //		System.out.println(uavsOnGrid.toString()); 
 
-		if (canMove(1))
-		sendWaypointCommand(1,new Point(70,50),30);
-		if (canMove(2))
-		sendWaypointCommand(2,new Point(10,(int) grid.numCellsLon-10),15); 
-		if(canMove(3))
-		sendWaypointCommand(3,new Point((int)grid.numCellsLat-10,10),15);
-		if(canMove(4))
-		sendWaypointCommand(4,new Point((int)grid.numCellsLat-10,(int) grid.numCellsLon-10),15);
+//		if (canMove(1))
+//		sendWaypointCommand(1,new Point(70,50),30);
+//		if (canMove(2))
+//		sendWaypointCommand(2,new Point(10,(int) grid.numCellsLon-10),15); 
+//		if(canMove(3))
+//		sendWaypointCommand(3,new Point((int)grid.numCellsLat-10,10),15);
+//		if(canMove(4))
+//		sendWaypointCommand(4,new Point((int)grid.numCellsLat-10,(int) grid.numCellsLon-10),15);
 //		Point p = grid.initLoc;
 //		int inc = 10;
 //		for (long id : this.uavsOnGrid.keySet()) {
@@ -383,9 +513,11 @@ public class gridClientHeatmap extends Thread {
 //			}
 //			grid.initLoc = p;
 //		}
+		// just cover the entire area
+
 	}
 
-	public void sendToWayPoint(OutputStream out, long vehicleId, Location3D location,float speed) throws Exception {
+	public void sendToWayPoint(OutputStream out, long vehicleId, Location3D location, float speed) throws Exception {
 		MissionCommand mc = new MissionCommand();
 		mc.setVehicleID(vehicleId);
 		mc.setStatus(CommandStatusType.Pending);
@@ -401,26 +533,29 @@ public class gridClientHeatmap extends Thread {
 
 		mc.setFirstWaypoint(1);
 		mc.getWaypointList().add(wp);
-		uavs.get(vehicleId).currentCommand = mc; 
+		uavs.get(vehicleId).currentCommand = mc;
 //		vehicleCommands.put(vehicleId, mc);
 		out.write(avtas.lmcp.LMCPFactory.packMessage(mc, true));
 	}
 
-	public void sendWaypointCommand(long vehicleId, Point cell, float uavAirSpeed) throws IOException, Exception
-	{
+	public void sendWaypointCommand(long vehicleId, Point cell, float uavAirSpeed) throws IOException, Exception {
 		uavs.get(vehicleId).commandCell = cell;
+
 //		commandLocations.put(vehicleId, cell);
 		Location3D loc = grid.pointToLocation(cell);
+		uavs.get(vehicleId).targetLocation = loc;
 		sendToWayPoint(socket.getOutputStream(), vehicleId, loc, uavAirSpeed);
 	}
-	public void sendWaypointCommand(long vehicleId, Location3D loc, float uavAirSpeed)
-	{
-		
+
+	public void sendWaypointCommand(long vehicleId, Location3D loc, float uavAirSpeed) {
+
 	}
+
 	public void sendLoiterCommand(long vehicleId, Point cell, float uavAirSpeed) throws Exception {
 		uavs.get(vehicleId).commandCell = cell;
 //		commandLocations.put(vehicleId, cell);
 		Location3D loc = grid.pointToLocation(cell);
+		uavs.get(vehicleId).targetLocation = loc;
 		sendLoiterCommand(socket.getOutputStream(), vehicleId, loc, uavAirSpeed);
 	}
 
@@ -442,7 +577,6 @@ public class gridClientHeatmap extends Thread {
 		o.setVehicleID(vehicleId);
 		o.setStatus(CommandStatusType.Pending);
 		o.setCommandID(1);
-		
 
 		// Setting up the loiter action
 		LoiterAction loiterAction = new LoiterAction();
@@ -453,8 +587,6 @@ public class gridClientHeatmap extends Thread {
 		loiterAction.setDirection(LoiterDirection.Clockwise);
 		loiterAction.setDuration(LoiterDuration);
 		loiterAction.setAirspeed(uavAirSpeed);
-		
-		
 
 		// Creating a 3D location object for the stare point
 		loiterAction.setLocation(location);
@@ -464,7 +596,7 @@ public class gridClientHeatmap extends Thread {
 
 		// Sending the Vehicle Action Command message to AMASE to be interpreted
 		out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
-		uavs.get(vehicleId).currentCommand = o; 
+		uavs.get(vehicleId).currentCommand = o;
 //		this.vehicleCommands.put(vehicleId, o);
 	}
 
@@ -566,7 +698,7 @@ public class gridClientHeatmap extends Thread {
 		}
 		uavInfo uav = uavs.get(id);
 		float maxspeed = avc.getMaximumSpeed();
-		avc.setNominalAltitudeType(AltitudeType.AGL); 
+		avc.setNominalAltitudeType(AltitudeType.AGL);
 		avc.setNominalAltitude(700);
 		FlightProfile fp = avc.getNominalFlightProfile();
 		energyRate = fp.getEnergyRate();
@@ -578,7 +710,6 @@ public class gridClientHeatmap extends Thread {
 			if (uavsHashMapHasSpeedForAll())
 				this.allSpeedsSaved = true;
 		}
-	
 
 	}
 
@@ -605,8 +736,9 @@ public class gridClientHeatmap extends Thread {
 
 	public void updateVehicleCommands(long id, Location3D loc) {
 		if (uavs.get(id).currentCommand != null) {
-			
-			if (grid.locInGridPoint(loc, uavs.get(id).commandCell)) {
+
+//			if (grid.locInGridPoint(loc, uavs.get(id).commandCell)) {
+			if(closeEnough(loc,uavs.get(id).targetLocation)) {
 				uavs.get(id).currentCommand.setStatus(CommandStatusType.Executed);
 			}
 		}
@@ -627,7 +759,7 @@ public class gridClientHeatmap extends Thread {
 		uavs.get(id).currentCell = cell;
 //		this.uavsOnGrid.put(id, cell);
 //		this.uavLocations.put(id, loc);
-		uavs.get(id).currentLocation=loc; 
+		uavs.get(id).currentLocation = loc;
 	}
 
 	/**
