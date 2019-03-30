@@ -11,11 +11,9 @@
 
 import afrl.cmasi.searchai.HazardZoneDetection;
 import afrl.cmasi.searchai.HazardZoneEstimateReport;
-import afrl.cmasi.AirVehicleState;
 import afrl.cmasi.AltitudeType;
 import afrl.cmasi.CommandStatusType;
 import afrl.cmasi.EntityState;
-import afrl.cmasi.FlightDirectorAction;
 import afrl.cmasi.GimbalStareAction;
 import afrl.cmasi.Location3D;
 import afrl.cmasi.LoiterAction;
@@ -38,7 +36,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,12 +58,6 @@ public class UnknownSearch extends Thread {
     Boolean sendMissionCommand = true;
     double clat = 53.3783;
     double clongt = -1.7616;
-    
-    HashMap<Long, ArrayList<Boolean>> state = new HashMap<>();
-    HashMap<Long, Boolean> searching = new HashMap<>();
-    Polygon hazardPolygon = new Polygon();
-    HashMap<Long, Location3D> detectedLocs = new HashMap<>();
-
     
     public UnknownSearch() {
     	
@@ -129,12 +120,17 @@ public class UnknownSearch extends Thread {
     public void sendLoiterCommand (OutputStream out,InputStream in, long vehicleId , Location3D location) throws Exception {
     	
    	
-    	
+    	//LMCPObject o1 = LMCPFactory.getObject(in);
+    	//Setting up the mission to send to the UAV
          VehicleActionCommand o = new VehicleActionCommand();
          o.setVehicleID(vehicleId);
          o.setStatus(CommandStatusType.Pending);
          o.setCommandID(1);
-       
+         
+        // Location3D newloc = new Location3D();
+        // newloc.setLatitude(location.getLatitude()+0.002);
+        // newloc.setLongitude(location.getLongitude()+0.002);
+         //Setting up the loiter action
          LoiterAction loiterAction = new LoiterAction();
          loiterAction.setLoiterType(LoiterType.Circular);
          loiterAction.setRadius(10);
@@ -237,7 +233,7 @@ public void callUAV(OutputStream out, Location3D location, int id) throws Except
      waypoint1.setLatitude(location.getLatitude());
      waypoint1.setLongitude(location.getLongitude());
      waypoint1.setAltitude(100);
-     waypoint1.setAltitudeType(AltitudeType.MSL);
+     waypoint1.setAltitudeType(AltitudeType.AGL);
      //Setting unique ID for the waypoint
      waypoint1.setNumber(1);
      waypoint1.setNextWaypoint(2);
@@ -269,7 +265,7 @@ public void callUAV(OutputStream out, Location3D location, int id) throws Except
 
 public void makingCross(OutputStream out,int numberOfUAVsSearch, double latincrement, double longincrement) throws Exception {
 	
-	//Location3D location = new Location3D(53.4811,-1.8119, 0, afrl.cmasi.AltitudeType.MSL);
+	//Location3D location = new Location3D(53.4811,-1.8119, 0, afrl.cmasi.AltitudeType.AGL);
 	/*
 	double lat = loc.getLatitude();
 	double lon = loc.getLongitude();
@@ -336,7 +332,7 @@ public void makingCross(OutputStream out,int numberOfUAVsSearch, double latincre
     	}
     
     
-    waypoint1.setAltitudeType(AltitudeType.MSL);
+    waypoint1.setAltitudeType(AltitudeType.AGL);
     //Setting unique ID for the waypoint
     waypoint1.setNumber(1);
     waypoint1.setNextWaypoint(2);
@@ -391,7 +387,7 @@ public void sendKnownMission(OutputStream out, Location3D loc) throws Exception 
       
       
       
-      waypoint1.setAltitudeType(AltitudeType.MSL);
+      waypoint1.setAltitudeType(AltitudeType.AGL);
       //Setting unique ID for the waypoint
       waypoint1.setNumber(1);
       waypoint1.setNextWaypoint(2);
@@ -500,7 +496,7 @@ public void UAV3(OutputStream out) throws Exception {
      
          
      waypoint.setAltitude(150);
-     waypoint.setAltitudeType(AltitudeType.MSL);
+     waypoint.setAltitudeType(AltitudeType.AGL);
      //Setting unique ID for the waypoint
      waypoint.setNumber(ct);
      waypoint.setNextWaypoint(ct+1);
@@ -541,6 +537,10 @@ public void UAV4(OutputStream out) throws Exception {
 	
 	
 	double circleadd =0.0;
+	
+	
+		
+		
 		int no =numberOfUAVsSearch;
 		
 		 double lat1 =	53.3547+0.022;
@@ -617,7 +617,7 @@ public void UAV4(OutputStream out) throws Exception {
      
          
      waypoint.setAltitude(150);
-     waypoint.setAltitudeType(AltitudeType.MSL);
+     waypoint.setAltitudeType(AltitudeType.AGL);
      //Setting unique ID for the waypoint
      waypoint.setNumber(ct);
      waypoint.setNextWaypoint(ct+1);
@@ -740,7 +740,7 @@ public void searchMissionParallel(OutputStream out, int numberOfUAVsSearch) thro
      
          
      waypoint.setAltitude(150);
-     waypoint.setAltitudeType(AltitudeType.MSL);
+     waypoint.setAltitudeType(AltitudeType.AGL);
      //Setting unique ID for the waypoint
      waypoint.setNumber(ct);
      waypoint.setNextWaypoint(ct+1);
@@ -761,7 +761,14 @@ public void searchMissionParallel(OutputStream out, int numberOfUAVsSearch) thro
      //rd++;
      }
      
-  
+    
+     
+     
+    
+     //Mission fuel analysis will goes here.
+   
+     
+     //Setting the waypoint list in the mission command
      o.getWaypointList().addAll(waypoints);
      
      //Sending the Mission Command message to AMASE to be interpreted
@@ -772,7 +779,482 @@ public void searchMissionParallel(OutputStream out, int numberOfUAVsSearch) thro
 		
 	}
 	}
+		
+	
+	
+	
+	/*
+	int id3 =3;
+	int id4 =4;
+	
+	
+	if(id3==3) {
+		
+		
+		 double lat1 =	53.4463;
+		  double lat2 =	53.4914;
+		  double longt2 = -1.8341;
+		  double startlon = -1.7584;
+		  
+		 
+		 
+		  double diflat = lat2 - lat1; 
+		  double diflongt = longt2 - startlon;
+		  double longtshare = diflongt/numberOfUAVsSearch;
+		  double latshare = diflat/numberOfUAVsSearch;
+		  
+		  double lon =longtshare/2+circleadd;
+		  double longt1 = longtshare/2;
+		  lat1 = lat2/2;
+		  longt1 = longtshare/2;
+		  
+		  double latincrement = 0.0057;
+	
+		  
+		 
+		  int ct = 0;
+		  int rd = 1;
+	    //Setting up the mission to send to the UAV
+	  
+    MissionCommand o = new MissionCommand();
+    o.setFirstWaypoint(1);
+    //Setting the UAV to recieve the mission
+    o.setVehicleID(3);
+    o.setStatus(CommandStatusType.Pending);
+    //Setting a unique mission command ID
+    o.setCommandID(1);
+    
+    //Creating the list of waypoints to be sent with the mission command
+    ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
+    //Creating the first waypoint
+    //Note: all the following attributes must be set to avoid issues
+    
+    while(lat1<=lat2){
+   	 
+    Waypoint waypoint = new Waypoint();
+    //Setting 3D coordinates
+   
+    if(ct == 0 ){
+        waypoint.setLatitude(lat1);
+        waypoint.setLongitude(longt1);
+		 }
+		 else if(ct == 1){
+			
+			waypoint.setLatitude(lat1);
+			longt1 =longt1+longtshare;
+			waypoint.setLongitude(longt1);
+		 }
+		 else if(ct % 2 == 0){
+			 lat1=lat1+latincrement;
+			 waypoint.setLatitude(lat1);
+			 waypoint.setLongitude(longt1);
+			 
+		 }
+    
+		 else{
+			 rd++;
+			 
+			 if(rd % 2==0) {
+				
+				 longt1 = longt1-longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			 else {
+				 longt1 = longt1+longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			
+			
+		 }
+    
+        
+    waypoint.setAltitude(150);
+    waypoint.setAltitudeType(AltitudeType.AGL);
+    //Setting unique ID for the waypoint
+    waypoint.setNumber(ct);
+    waypoint.setNextWaypoint(ct+1);
+    //Setting speed to reach the waypoint
+    waypoint.setSpeed(30);
+    waypoint.setSpeedType(SpeedType.Airspeed);
+    //Setting the climb rate to reach new altitude (if applicable)
+    waypoint.setClimbRate(0);
+    waypoint.setTurnType(TurnType.TurnShort);
+    //Setting backup waypoints if new waypoint can't be reached
+    waypoint.setContingencyWaypointA(ct-1);
+    waypoint.setContingencyWaypointB(ct-2);
+    
+    waypoints.add(waypoint);
+    
+    ct++;
+    
+    //rd++;
+    }
+   
+    //Mission fuel analysis will goes here.
+  
+    
+    //Setting the waypoint list in the mission command
+    o.getWaypointList().addAll(waypoints);
+    
+    //Sending the Mission Command message to AMASE to be interpreted
+    out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+    System.out.println("Mission sent to UAV "+id3 + "Diagonal istance is "+computeDistance(lat1,lat2,longt1,longt2)+" meters");
+    circleadd = circleadd + longtshare;
+	 }
+	
+	if(id4==4) {
+		
+		
+		 double lat1 =	53.4463;
+		  double lat2 =	53.4914;
+		  double longt2 = -1.8341;
+		  double startlon = -1.7584;
+		  
+		 
+		 
+		  double diflat = lat2 - lat1; 
+		  double diflongt = longt2 - startlon;
+		  double longtshare = diflongt/numberOfUAVsSearch;
+		  double latshare = diflat/numberOfUAVsSearch;
+		  
+		  double lon =longtshare/2+circleadd;
+		  double longt1 = longtshare/2;
+		  lat1 = lat2/2;
+		  longt1 = longtshare/2;
+		  
+		  double latincrement = 0.0057;
+		  
+		 
+		  int ct = 0;
+		  int rd = 1;
+	    //Setting up the mission to send to the UAV
+	  
+   MissionCommand o = new MissionCommand();
+   o.setFirstWaypoint(1);
+   //Setting the UAV to recieve the mission
+   o.setVehicleID(id4);
+   o.setStatus(CommandStatusType.Pending);
+   //Setting a unique mission command ID
+   o.setCommandID(1);
+   
+   //Creating the list of waypoints to be sent with the mission command
+   ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
+   //Creating the first waypoint
+   //Note: all the following attributes must be set to avoid issues
+   
+   while(lat1<=lat2){
+  	 
+   Waypoint waypoint = new Waypoint();
+   //Setting 3D coordinates
+  
+   if(ct == 0 ){
+       waypoint.setLatitude(lat1);
+       waypoint.setLongitude(longt1);
+		 }
+		 else if(ct == 1){
+			
+			waypoint.setLatitude(lat1);
+			longt1 =longt1+longtshare;
+			waypoint.setLongitude(longt1);
+		 }
+		 else if(ct % 2 == 0){
+			 lat1=lat1+latincrement;
+			 waypoint.setLatitude(lat1);
+			 waypoint.setLongitude(longt1);
+			 
+		 }
+   
+		 else{
+			 rd++;
+			 
+			 if(rd % 2==0) {
+				
+				 longt1 = longt1-longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			 else {
+				 longt1 = longt1+longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			
+			
+		 }
+   
+       
+   waypoint.setAltitude(150);
+   waypoint.setAltitudeType(AltitudeType.AGL);
+   //Setting unique ID for the waypoint
+   waypoint.setNumber(ct);
+   waypoint.setNextWaypoint(ct+1);
+   //Setting speed to reach the waypoint
+   waypoint.setSpeed(30);
+   waypoint.setSpeedType(SpeedType.Airspeed);
+   //Setting the climb rate to reach new altitude (if applicable)
+   waypoint.setClimbRate(0);
+   waypoint.setTurnType(TurnType.TurnShort);
+   //Setting backup waypoints if new waypoint can't be reached
+   waypoint.setContingencyWaypointA(ct-1);
+   waypoint.setContingencyWaypointB(ct-2);
+   
+   waypoints.add(waypoint);
+   
+   ct++;
+   
+   //rd++;
+   }
+  
+   //Mission fuel analysis will goes here.
+ 
+   
+   //Setting the waypoint list in the mission command
+   o.getWaypointList().addAll(waypoints);
+   
+   //Sending the Mission Command message to AMASE to be interpreted
+   out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+   System.out.println("Mission sent to UAV "+id3 + "Diagonal istance is "+computeDistance(lat1,lat2,longt1,longt2)+" meters");
+   circleadd = circleadd + longtshare;
+	 }
+		
+	
+	
+}
 
+
+public void searchMissionExpand2(OutputStream out, int numberOfUAVsExpand) throws Exception {
+	
+	double circleadd = 0.0;
+	//int
+	
+	 
+	
+	for(int n=1; n<=numberOfUAVsSearch; n++) {
+		
+		
+		 double lat1 =	53.4463;
+		  double lat2 =	53.4914;
+		  double longt2 = -1.8341;
+		  double startlon = -1.7584;
+		  double lon =-1.7584+circleadd;
+		  double longt1 = lon;
+		  double diflat = lat2 - lat1; 
+		  double diflongt = longt2 - startlon;
+		  double longtshare = diflongt/numberOfUAVsSearch;
+		  double latshare = diflat/numberOfUAVsSearch;
+		  double latincrement = 0.0057;
+	
+		  
+		 
+		  int ct = 0;
+		  int rd = 1;
+	    //Setting up the mission to send to the UAV
+	  
+     MissionCommand o = new MissionCommand();
+     o.setFirstWaypoint(1);
+     //Setting the UAV to recieve the mission
+     o.setVehicleID(n);
+     o.setStatus(CommandStatusType.Pending);
+     //Setting a unique mission command ID
+     o.setCommandID(1);
+     
+     //Creating the list of waypoints to be sent with the mission command
+     ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
+     //Creating the first waypoint
+     //Note: all the following attributes must be set to avoid issues
+     
+     while(lat1<=lat2){
+    	 
+     Waypoint waypoint = new Waypoint();
+     //Setting 3D coordinates
+    
+     if(ct == 0 ){
+         waypoint.setLatitude(lat1);
+         waypoint.setLongitude(longt1);
+		 }
+		 else if(ct == 1){
+			
+			waypoint.setLatitude(lat1);
+			longt1 =longt1+longtshare;
+			waypoint.setLongitude(longt1);
+		 }
+		 else if(ct % 2 == 0){
+			 lat1=lat1+latincrement;
+			 waypoint.setLatitude(lat1);
+			 waypoint.setLongitude(longt1);
+			 
+		 }
+     
+		 else{
+			 rd++;
+			 
+			 if(rd % 2==0) {
+				
+				 longt1 = longt1-longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			 else {
+				 longt1 = longt1+longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			
+			
+		 }
+     
+         
+     waypoint.setAltitude(150);
+     waypoint.setAltitudeType(AltitudeType.AGL);
+     //Setting unique ID for the waypoint
+     waypoint.setNumber(ct);
+     waypoint.setNextWaypoint(ct+1);
+     //Setting speed to reach the waypoint
+     waypoint.setSpeed(30);
+     waypoint.setSpeedType(SpeedType.Airspeed);
+     //Setting the climb rate to reach new altitude (if applicable)
+     waypoint.setClimbRate(0);
+     waypoint.setTurnType(TurnType.TurnShort);
+     //Setting backup waypoints if new waypoint can't be reached
+     waypoint.setContingencyWaypointA(ct-1);
+     waypoint.setContingencyWaypointB(ct-2);
+     
+     waypoints.add(waypoint);
+     
+     ct++;
+     
+     //rd++;
+     }
+    
+     //Mission fuel analysis will goes here.
+   
+     
+     //Setting the waypoint list in the mission command
+     o.getWaypointList().addAll(waypoints);
+     
+     //Sending the Mission Command message to AMASE to be interpreted
+     out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+     System.out.println("Mission sent to UAV "+n + "Diagonal istance is "+computeDistance(lat1,lat2,longt1,longt2)+" meters");
+     circleadd = circleadd + longtshare;
+	 }
+		
+		*/
+	
+
+public void searchMissionCreepline(OutputStream out, int numberOfUAVsSearch) throws Exception {
+	
+	double circleadd = 0.0;
+	//int
+	for(int n=1; n<=numberOfUAVsSearch; n++) {
+		
+		
+		  double lat1 =	53.4463;
+		  double lat2 =	53.4914;
+		  double longt2 = -1.8341;
+		  double startlon = -1.7584;
+		  double lon =-1.7584+circleadd;
+		  double longt1 = lon;
+		  double diflat = lat2 - lat1; 
+		  double diflongt = longt2 - startlon;
+		  double longtshare = diflongt/numberOfUAVsSearch;
+		  double latshare = diflat/numberOfUAVsSearch;
+	
+		  
+		  double latincrement = 0.0017;
+		  int ct = 0;
+		  int rd = 1;
+	    //Setting up the mission to send to the UAV
+	  
+     MissionCommand o = new MissionCommand();
+     o.setFirstWaypoint(1);
+     //Setting the UAV to recieve the mission
+     o.setVehicleID(n);
+     o.setStatus(CommandStatusType.Pending);
+     //Setting a unique mission command ID
+     o.setCommandID(1);
+     
+     //Creating the list of waypoints to be sent with the mission command
+     ArrayList<Waypoint> waypoints = new ArrayList<Waypoint>();
+     //Creating the first waypoint
+     //Note: all the following attributes must be set to avoid issues
+     
+     while(lat1<=lat2){
+    	 
+     Waypoint waypoint = new Waypoint();
+     //Setting 3D coordinates
+    
+     if(ct == 0 ){
+         waypoint.setLatitude(lat1);
+         waypoint.setLongitude(longt1);
+		 }
+		 else if(ct == 1){
+			
+			waypoint.setLatitude(lat1);
+			longt1 =longt1+longtshare;
+			waypoint.setLongitude(longt1);
+		 }
+		 else if(ct % 2 == 0){
+			 lat1=lat1+latincrement;
+			 waypoint.setLatitude(lat1);
+			 waypoint.setLongitude(longt1);
+			 
+		 }
+     
+		 else{
+			 rd++;
+			 
+			 if(rd % 2==0) {
+				
+				 longt1 = longt1-longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			 else {
+				 longt1 = longt1+longtshare;	
+					waypoint.setLatitude(lat1);
+					waypoint.setLongitude(longt1);
+			 }
+			
+			
+		 }
+     
+         
+     waypoint.setAltitude(700);
+     waypoint.setAltitudeType(AltitudeType.AGL);
+     //Setting unique ID for the waypoint
+     waypoint.setNumber(ct);
+     waypoint.setNextWaypoint(ct+1);
+     //Setting speed to reach the waypoint
+     waypoint.setSpeed(30);
+     waypoint.setSpeedType(SpeedType.Airspeed);
+     //Setting the climb rate to reach new altitude (if applicable)
+     waypoint.setClimbRate(0);
+     waypoint.setTurnType(TurnType.TurnShort);
+     //Setting backup waypoints if new waypoint can't be reached
+     waypoint.setContingencyWaypointA(ct-1);
+     waypoint.setContingencyWaypointB(ct-2);
+     
+     waypoints.add(waypoint);
+     
+     ct++;
+     
+     //rd++;
+     }
+    
+     //Mission fuel analysis will goes here.
+   
+     
+     //Setting the waypoint list in the mission command
+     o.getWaypointList().addAll(waypoints);
+     
+     //Sending the Mission Command message to AMASE to be interpreted
+     out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+     System.out.println("Mission sent to UAV "+n + "Diagonal istance is "+computeDistance(lat1,lat2,longt1,longt2)+" meters");
+     circleadd = circleadd + longtshare;
+	 }//en of for statement
+}
 
 
 public void goForCharge(OutputStream out, long vehicleId , Location3D location) throws Exception {
@@ -806,18 +1288,12 @@ public void goForCharge(OutputStream out, long vehicleId , Location3D location) 
 }
 
 
-
-
-
 public void readMessages(InputStream in, OutputStream out) throws Exception {
     //Use each of the if statements to use the incoming message
     LMCPObject o = LMCPFactory.getObject(in);
     //Check if the message is a HazardZoneDetection
     int detection = 0;
-    
-    	
     if (o instanceof afrl.cmasi.searchai.HazardZoneDetection) {
-    	
     	//detection++;
         HazardZoneDetection hazardDetected = ((HazardZoneDetection) o);
         //Get location where zone first detected
@@ -835,51 +1311,32 @@ public void readMessages(InputStream in, OutputStream out) throws Exception {
         //call the rest of UAVs
         for(int i=0; i<=numberOfUAVsSearch; i++) {
         	
-        	
-        	int k=100;
-        	
-        	if(k!=1) {
-        		
-        		
-				if(i==1) {
+        	if(i!=detectingEntity) {
+        
+        		if(i==1) {
         			//sendMissionCommand = false;
-		if (o instanceof afrl.cmasi.AirVehicleState) {
-			AirVehicleState avs = ((AirVehicleState)o);
-        	long id = avs.getID();
-        	sendMissionCommand = false;
-        	hazardPolygon.getBoundaryPoints().add(detectedLocation);
-			sendEstimateReport(out);
-       changingHeading(avs, detectingEntity, out);
+       callUAV(out, detectedLocation, 3);
        
         		}
         		else {
         			//sendMissionCommand = false;
-        			if (o instanceof afrl.cmasi.AirVehicleState) {
-        				AirVehicleState avs = ((AirVehicleState)o);
-        	        	long id = avs.getID();
-        	        	hazardPolygon.getBoundaryPoints().add(detectedLocation);
-            			sendEstimateReport(out);
-        	       changingHeading(avs, detectingEntity, out);
-        		
+        			callUAV(out, detectedLocation, 4);	
+        			
         		}
        
         		//makingCross(out,numberOfUAVsSearch,detectedLocation,0.002, 0.002);
         
 		
-        	}
-				}else {
+        	}else {
         		
         		// sendLoiterCommand(out, in, i, detectedLocation);
         		System.out.println("I am the caller UAV" + detectingEntity);
         		 
         	}
         	
-        	
-        	
         }
        
         
-       }
        }//endof if
        else {
     	   
@@ -932,7 +1389,7 @@ public void readMessages(InputStream in, OutputStream out) throws Exception {
     	
     		if(energyAvail <= 25) {
     			sendMissionCommand = false;
-    		Location3D c = new Location3D(clat, clongt, 0, afrl.cmasi.AltitudeType.MSL);
+    		Location3D c = new Location3D(clat, clongt, 0, afrl.cmasi.AltitudeType.AGL);
     		
     		//goForCharge(out,((afrl.cmasi.EntityState) o).getID(), c);
     		
@@ -943,60 +1400,57 @@ public void readMessages(InputStream in, OutputStream out) throws Exception {
     		}
     		
     		
+    		/*
+    		double rate = (40/energyrate);
+    		System.out.println(energyAvail);
+    		if(energyAvail <= 25) {
+    			sendMissionCommand = false;
+    		Location3D c = new Location3D(clat, clongt, 0, afrl.cmasi.AltitudeType.AGL);
     		
+    		//goForCharge(out,((afrl.cmasi.EntityState) o).getID(), c);
+    		
+    		sendKnownMission(out, c);
+    		
+    		if(energyAvail == 100) {
+    		sendMissionCommand = true;
+    		}
+    		
+    	
+    		double rate2 = (25/energyrate);
+    		System.out.println("UAV3 or UAV4"+energyAvail);
+    		if(energyAvail <= 25) {
+    			sendMissionCommand = false;	
+    		//Location3D c = new Location3D(clat, clongt, 0, afrl.cmasi.AltitudeType.AGL);
+    		
+    		//goForCharge(out,((afrl.cmasi.EntityState) o).getID(), c);
+    		sendKnownMission(out, c);
+    		if(energyAvail == 100) {
+        		sendMissionCommand = true;
+        		}
+    		
+    	*/
+    		
+    		/*
+    	
+    	System.out.println(
+    			"Energy Available in %" +energyAvail +"/n"+
+    			"Pitch" +pitch +"/n"+
+    			"Energy Rate" +energyrate +"/n"+
+    			"Vehicle ID" +vehicle_ID +"/n"+
+    			"Velocity x dir" +vx +"/n"+
+    			"Velocity y dir" +vy +"/n"+
+    			"Velocity z dir" +vz +"/n"+
+    			"Accelaration x dir" +ax +"/n"+
+    			"Accelaration y dir" +ay +"/n"+
+    			"Accelaration z dir" +az +"/n"+
+    			"Location timer" +loc +"/n"+
+    			"Time " +time +"/n"
+    			
+    			);
+    			*/
     	}
     	
     }
-}
-
-
-public void changingHeading(AirVehicleState avs, long id, OutputStream out) throws IOException, Exception {
-	int heading;
-	if(state.get(id).get(0)) {
-		heading = 100;
-	} else {
-		heading = -100;
-	}
-
-	VehicleActionCommand vac = new VehicleActionCommand();
-	vac.setVehicleID(id);
-	vac.setStatus(CommandStatusType.Pending);
-	vac.setCommandID(1);
-
-	FlightDirectorAction fda = new FlightDirectorAction();
-	fda.setHeading(avs.getHeading() + heading);
-	vac.getVehicleActionList().add(fda);
-
-	out.write(avtas.lmcp.LMCPFactory.packMessage(vac, true));
-	
-	state.get(id).set(1, state.get(id).get(0));
-	state.get(id).set(0, false);
-
-}
-
-public void handleHazard(HazardZoneDetection hzd) {
-	long id = hzd.getDetectingEnitiyID();
-	state.get(id).set(0, true);
-	detectedLocs.put(id, hzd.getDetectedLocation());
-	
-	if(searching.containsKey(id)) {
-		searching.put(id, false);
-	}
-}
-
-public void sendEstimateReport(OutputStream out) throws Exception {
-    //Setting up the mission to send to the UAV
-    HazardZoneEstimateReport o = new HazardZoneEstimateReport();
-    o.setEstimatedZoneShape(hazardPolygon);
-    o.setUniqueTrackingID(1);
-    o.setEstimatedGrowthRate(0);
-    o.setPerceivedZoneType(afrl.cmasi.searchai.HazardType.Fire);
-    o.setEstimatedZoneDirection(0);
-    o.setEstimatedZoneSpeed(0);
-
-
-    //Sending the Vehicle Action Command message to AMASE to be interpreted
-    out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
 }
 
 
