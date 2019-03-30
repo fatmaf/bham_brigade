@@ -13,6 +13,7 @@ import afrl.cmasi.searchai.HazardZoneDetection;
 import afrl.cmasi.searchai.HazardZoneEstimateReport;
 import afrl.cmasi.AltitudeType;
 import afrl.cmasi.CommandStatusType;
+import afrl.cmasi.EntityState;
 import afrl.cmasi.GimbalStareAction;
 import afrl.cmasi.Location3D;
 import afrl.cmasi.LoiterAction;
@@ -55,6 +56,10 @@ public class UnknownSearch extends Thread {
     // that is the number of faster drones to conduct the fast search
     int numberOfUAVsSearch = 2;
     Boolean sendMissionCommand = true;
+    double clat = 53.3783;
+    double clongt = -1.7616;
+    Boolean slow = true;
+    Boolean slow2 = true;
     
     public UnknownSearch() {
     	
@@ -72,12 +77,24 @@ public class UnknownSearch extends Thread {
         	
             Boolean sensorCommandSent = false;
             Boolean loiterCommandSent = false;
+          
             
             Socket socket = connect(host, port);
-            if(sendMissionCommand==true) {}
-            UAV4(socket.getOutputStream());
+            if(sendMissionCommand==true) {
+            	
+            
             searchMissionParallel(socket.getOutputStream(),numberOfUAVsSearch);
+            if(slow==true) {
+            
             UAV3(socket.getOutputStream());
+            }
+            
+            if(slow2==true) {
+                UAV4(socket.getOutputStream());
+                
+                }
+            
+            }
             
             
          //  makingCross(socket.getOutputStream(),numberOfUAVsSearch,0.02, 0.02);
@@ -353,7 +370,7 @@ public void makingCross(OutputStream out,int numberOfUAVsSearch, double latincre
 }
 
 
-public void sendKnownMission(OutputStream out) throws Exception {
+public void sendKnownMission(OutputStream out, Location3D loc) throws Exception {
 	
 	
 	//replicate these for the numer of UAVs
@@ -372,8 +389,8 @@ public void sendKnownMission(OutputStream out) throws Exception {
       //Setting 3D coordinates
       
       //example values 
-      waypoint1.setLatitude(53.4783);
-      waypoint1.setLongitude(-1.808);
+      waypoint1.setLatitude(loc.getLatitude());
+      waypoint1.setLongitude(loc.getLongitude());
       waypoint1.setAltitude(100);
       
       
@@ -411,26 +428,22 @@ public void UAV3(OutputStream out) throws Exception {
 	
 	double circleadd = 0.0;
 	//int
-	
-	 
-	
-		
 		
 		int no =numberOfUAVsSearch;
 		
-		 double lat1 =	53.4463+0.002;
-		  double lat2 =	53.4914;
-		  double longt2 = -1.8341;
-		  double startlon = -1.7584;
-		  double lon =-1.7584+circleadd;
-		  double longt1 = lon;
+		 double lat1 =	53.3547+0.022;
+		  double lat2 =	53.5341;
+		  double longt2 = -1.618;
+		  double startlon = -1.7691;
+		  
 		  double diflat = lat2 - lat1; 
 		  double diflongt = longt2 - startlon;
-		  double longtshare = diflongt/no;
+		  double longtshare = diflongt;
 		  double latshare = diflat/no;
-		  double latincrement = 0.0057;
+		  double latincrement = 0.0157;
 	
-		  
+		  double lon =startlon;
+		  double longt1 = lon;
 		 
 		  int ct = 0;
 		  int rd = 1;
@@ -526,6 +539,8 @@ public void UAV3(OutputStream out) throws Exception {
 		
 	}
 
+
+
 public void UAV4(OutputStream out) throws Exception {
 	
 	
@@ -536,17 +551,17 @@ public void UAV4(OutputStream out) throws Exception {
 		
 		int no =numberOfUAVsSearch;
 		
-		 double lat1 =	53.4463+0.002;
-		  double lat2 =	53.4914;
-		  double longt2 = -1.7584;
-		  double startlon = -1.8341+0.002;
-		  double lon =-1.8341;
+		 double lat1 =	53.3547+0.022;
+		  double lat2 =	53.5341;
+		  double longt2 = -1.618;
+		  double startlon = -1.9193+0.002;
+		  double lon =-1.9193;
 		  double longt1 = lon;
 		  double diflat = lat2 - lat1; 
 		  double diflongt = longt2 - startlon;
 		  double longtshare = diflongt/no;
 		  double latshare = diflat/no;
-		  double latincrement = 0.0057;
+		  double latincrement = 0.0157;
 		  circleadd = circleadd + longtshare;
 		 
 		  
@@ -639,7 +654,7 @@ public void UAV4(OutputStream out) throws Exception {
      
      //Sending the Mission Command message to AMASE to be interpreted
      out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
-     System.out.println("Mission sent to UAV3 "+ "Diagonal istance is "+computeDistance(lat1,lat2,longt1,longt2)+" meters");
+     System.out.println("Mission sent to UAV4 "+ "Diagonal istance is "+computeDistance(lat1,lat2,longt1,longt2)+" meters");
     
 	 
 		
@@ -660,17 +675,17 @@ public void searchMissionParallel(OutputStream out, int numberOfUAVsSearch) thro
 		
 		int no =numberOfUAVsSearch;
 		
-		 double lat1 =	53.4463;
-		  double lat2 =	53.4914;
-		  double longt2 = -1.8341;
-		  double startlon = -1.7584;
-		  double lon =-1.7584+circleadd;
+		 double lat1 =	53.3547;
+		  double lat2 =	53.5341;
+		  double longt2 = -1.618;
+		  double startlon = -1.9193;
+		  double lon =-1.9193+circleadd;
 		  double longt1 = lon;
 		  double diflat = lat2 - lat1; 
 		  double diflongt = longt2 - startlon;
 		  double longtshare = diflongt/no;
 		  double latshare = diflat/no;
-		  double latincrement = 0.0057;
+		  double latincrement = 0.0157;
 	
 		  
 		 
@@ -753,6 +768,10 @@ public void searchMissionParallel(OutputStream out, int numberOfUAVsSearch) thro
      
      //rd++;
      }
+     
+    
+     
+     
     
      //Mission fuel analysis will goes here.
    
@@ -1131,10 +1150,6 @@ public void searchMissionExpand2(OutputStream out, int numberOfUAVsExpand) throw
 		
 		*/
 	
-	
-
-
-
 
 public void searchMissionCreepline(OutputStream out, int numberOfUAVsSearch) throws Exception {
 	
@@ -1250,6 +1265,36 @@ public void searchMissionCreepline(OutputStream out, int numberOfUAVsSearch) thr
 }
 
 
+public void goForCharge(OutputStream out, long vehicleId , Location3D location) throws Exception {
+	
+   	
+     VehicleActionCommand o = new VehicleActionCommand();
+     o.setVehicleID(vehicleId);
+     o.setStatus(CommandStatusType.Pending);
+     o.setCommandID(1);
+   
+     LoiterAction loiterAction = new LoiterAction();
+     loiterAction.setLoiterType(LoiterType.Circular);
+     loiterAction.setRadius(10);
+     loiterAction.setAxis(0);
+     loiterAction.setLength(0);
+     loiterAction.setDirection(LoiterDirection.Clockwise);
+     loiterAction.setDuration(1000);
+     loiterAction.setAirspeed(10);
+     
+     //Creating a 3D location object for the stare point
+     loiterAction.setLocation(location);
+     
+     //Adding the loiter action to the vehicle action list
+     o.getVehicleActionList().add(loiterAction);
+     
+     //Sending the Vehicle Action Command message to AMASE to be interpreted
+     out.write(avtas.lmcp.LMCPFactory.packMessage(o, true));
+     
+    // searchMissionParallel(out,numberOfUAVsSearch);
+   
+}
+
 
 public void readMessages(InputStream in, OutputStream out) throws Exception {
     //Use each of the if statements to use the incoming message
@@ -1277,10 +1322,12 @@ public void readMessages(InputStream in, OutputStream out) throws Exception {
         	if(i!=detectingEntity && i !=detectingEntity) {
         
         		if(i==1) {
+        			slow = false;
        callUAV(out, detectedLocation, 3);
        
         		}
         		else {
+        			slow2 = false;
         			callUAV(out, detectedLocation, 4);	
         			
         		}
@@ -1324,6 +1371,94 @@ public void readMessages(InputStream in, OutputStream out) throws Exception {
        
        sendEstimateReport(out, estimatedHazardZone);
    }
+    
+    if (o instanceof afrl.cmasi.EntityState) {  
+    	EntityState myvehicle = ((EntityState) o);
+    	
+    	float energyAvail = ((afrl.cmasi.EntityState) o).getEnergyAvailable();
+    	float pitch = ((afrl.cmasi.EntityState) o).getPitch();
+    	float energyrate = ((afrl.cmasi.EntityState) o).getActualEnergyRate();
+    	long vehicle_ID = ((afrl.cmasi.EntityState) o).getID();
+    	float vx =((afrl.cmasi.EntityState) o).getU();
+    	float vy =((afrl.cmasi.EntityState) o).getV();
+    	float vz = ((afrl.cmasi.EntityState) o).getW();
+    	float ax = ((afrl.cmasi.EntityState) o).getU();
+    	float ay = ((afrl.cmasi.EntityState) o).getVdot();
+    	float az = ((afrl.cmasi.EntityState) o).getWdot();
+    	Location3D loc = ((afrl.cmasi.EntityState) o).getLocation();
+    	long time =((afrl.cmasi.EntityState) o).getTime();
+    	
+    	//distance from charging point
+    	
+    	Location3D myLoc = ((afrl.cmasi.EntityState) o).getLocation();
+    	double distanceToChargingpoint = computeDistance(myLoc.getLatitude(),clat,myLoc.getLongitude(),clongt);
+    	
+    	System.out.println(((afrl.cmasi.EntityState) o).getID());
+    	
+    		if(energyAvail <= 25) {
+    			sendMissionCommand = false;
+    		Location3D c = new Location3D(clat, clongt, 0, afrl.cmasi.AltitudeType.MSL);
+    		
+    		//goForCharge(out,((afrl.cmasi.EntityState) o).getID(), c);
+    		
+    		try {
+    		sendKnownMission(out, c);	
+    		}finally {
+    			sendMissionCommand = true;
+    		}
+    		
+    		
+    		/*
+    		double rate = (40/energyrate);
+    		System.out.println(energyAvail);
+    		if(energyAvail <= 25) {
+    			sendMissionCommand = false;
+    		Location3D c = new Location3D(clat, clongt, 0, afrl.cmasi.AltitudeType.MSL);
+    		
+    		//goForCharge(out,((afrl.cmasi.EntityState) o).getID(), c);
+    		
+    		sendKnownMission(out, c);
+    		
+    		if(energyAvail == 100) {
+    		sendMissionCommand = true;
+    		}
+    		
+    	
+    		double rate2 = (25/energyrate);
+    		System.out.println("UAV3 or UAV4"+energyAvail);
+    		if(energyAvail <= 25) {
+    			sendMissionCommand = false;	
+    		//Location3D c = new Location3D(clat, clongt, 0, afrl.cmasi.AltitudeType.MSL);
+    		
+    		//goForCharge(out,((afrl.cmasi.EntityState) o).getID(), c);
+    		sendKnownMission(out, c);
+    		if(energyAvail == 100) {
+        		sendMissionCommand = true;
+        		}
+    		
+    	*/
+    		
+    		/*
+    	
+    	System.out.println(
+    			"Energy Available in %" +energyAvail +"/n"+
+    			"Pitch" +pitch +"/n"+
+    			"Energy Rate" +energyrate +"/n"+
+    			"Vehicle ID" +vehicle_ID +"/n"+
+    			"Velocity x dir" +vx +"/n"+
+    			"Velocity y dir" +vy +"/n"+
+    			"Velocity z dir" +vz +"/n"+
+    			"Accelaration x dir" +ax +"/n"+
+    			"Accelaration y dir" +ay +"/n"+
+    			"Accelaration z dir" +az +"/n"+
+    			"Location timer" +loc +"/n"+
+    			"Time " +time +"/n"
+    			
+    			);
+    			*/
+    	}
+    	
+    }
 }
 
 
