@@ -1147,11 +1147,11 @@ public class UnknownSearch extends Thread {
 
 						if (i == 1) {
 							// sendMissionCommand = false;
-							callUAV(out, detectedLocation, 3);
+							callUAV(out, detectedLocation, (int)slowerUAVs[0]);
 
 						} else {
 							// sendMissionCommand = false;
-							callUAV(out, detectedLocation, 4);
+							callUAV(out, detectedLocation,(int) slowerUAVs[1]);
 
 						}
 
