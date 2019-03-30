@@ -66,50 +66,20 @@ public class UnknownSearch extends Thread {
 	double clongt = -1.7616;
 	long[] fasterUAVs;
 	long[] slowerUAVs;
-	HashMap<Long, uavInfo> uavs;
-	boolean allSpeedsSaved = false;
-	boolean allLocationsSaved = false;
 
-	double fasterspeed = 30;
-	HashMap<Long, Long> uavMappings;
 
 	public UnknownSearch() {
 
 		fasterUAVs = new long[2];
 		slowerUAVs = new long[2];
 		fasterUAVs[0] = 1;
-		fasterUAVs[1] = 2;
-		slowerUAVs[0] = 3;
+		fasterUAVs[1] = 3;
+		slowerUAVs[0] = 2;
 		slowerUAVs[1] = 4;
 
 	}
 
-	int fasterUAVsIndex = 0;
-	int slowerUAVsIndex = 0;
 
-	public class uavInfo {
-		Location3D currentLocation = null;
-		double currentEnergyRate;
-		double currentEnergy;
-		double maxSpeed = -1;
-		long id;
-		String entityType;
-		VehicleActionCommand currentCommand = null;
-		Location3D targetLocation = null;
-
-		public uavInfo(long id) {
-			this.id = id;
-		}
-	}
-
-	boolean uavsHashMapHasSpeedForAll() {
-		int numSpeed = 0;
-		for (Long u : uavs.keySet()) {
-			if (uavs.get(u).maxSpeed != -1)
-				numSpeed++;
-		}
-		return numSpeed == numberOfUAVsSearch;
-	}
 
 	@Override
 	public void run() {
@@ -123,10 +93,10 @@ public class UnknownSearch extends Thread {
 			Socket socket = connect(host, port);
 			if (sendMissionCommand == true) {
 
-				searchMissionParallel(socket.getOutputStream(), numberOfUAVsSearch);
+				searchMissionParallel(socket.getOutputStream(), fasterUAVs);
 
-				UAV4(socket.getOutputStream());
-				UAV3(socket.getOutputStream());
+				UAV4(socket.getOutputStream(),slowerUAVs[0]);
+				UAV3(socket.getOutputStream(),slowerUAVs[1]);
 
 			}
 
@@ -425,7 +395,7 @@ public class UnknownSearch extends Thread {
 	}
 
 //UAV3
-	public void UAV3(OutputStream out) throws Exception {
+	public void UAV3(OutputStream out,long id) throws Exception {
 
 		double circleadd = 0.0;
 		// int
@@ -453,7 +423,7 @@ public class UnknownSearch extends Thread {
 		MissionCommand o = new MissionCommand();
 		o.setFirstWaypoint(1);
 		// Setting the UAV to recieve the mission
-		o.setVehicleID(3);
+		o.setVehicleID(id);
 		o.setStatus(CommandStatusType.Pending);
 		// Setting a unique mission command ID
 		o.setCommandID(1);
@@ -534,7 +504,7 @@ public class UnknownSearch extends Thread {
 
 	}
 
-	public void UAV4(OutputStream out) throws Exception {
+	public void UAV4(OutputStream out,long id) throws Exception {
 
 		double circleadd = 0.0;
 
@@ -560,7 +530,7 @@ public class UnknownSearch extends Thread {
 		MissionCommand o = new MissionCommand();
 		o.setFirstWaypoint(1);
 		// Setting the UAV to recieve the mission
-		o.setVehicleID(4);
+		o.setVehicleID(id);
 		o.setStatus(CommandStatusType.Pending);
 		// Setting a unique mission command ID
 		o.setCommandID(1);
@@ -641,13 +611,14 @@ public class UnknownSearch extends Thread {
 	}
 
 //searching command parallel search
-	public void searchMissionParallel(OutputStream out, int numberOfUAVsSearch) throws Exception {
+	public void searchMissionParallel(OutputStream out, long[] fasterUAVS) throws Exception {
 
 		double circleadd = 0.0;
 		// int
 
-		for (int n = 1; n <= numberOfUAVsSearch; n++) {
+		for (int n = 0; n < fasterUAVs.length; n++) {
 
+			long id = fasterUAVs[n];
 			int no = numberOfUAVsSearch;
 
 			double lat1 = 53.3547;
@@ -669,7 +640,7 @@ public class UnknownSearch extends Thread {
 			MissionCommand o = new MissionCommand();
 			o.setFirstWaypoint(1);
 			// Setting the UAV to recieve the mission
-			o.setVehicleID(n);
+			o.setVehicleID(id);
 			o.setStatus(CommandStatusType.Pending);
 			// Setting a unique mission command ID
 			o.setCommandID(1);
@@ -1223,35 +1194,7 @@ public class UnknownSearch extends Thread {
 
 			sendEstimateReport(out, estimatedHazardZone);
 		}
-		if (o instanceof afrl.cmasi.AirVehicleConfiguration) {
-			AirVehicleConfiguration avc = ((AirVehicleConfiguration) o);
 
-			long id = avc.getID();
-			if (!uavs.containsKey(id)) {
-				uavs.put(id, new uavInfo(id));
-
-			}
-			uavInfo uav = uavs.get(id);
-			float maxspeed = avc.getMaximumSpeed();
-			FlightProfile fp = avc.getNominalFlightProfile();
-			float energyRate = fp.getEnergyRate();
-			uav.currentEnergyRate = energyRate;
-			String entityType = avc.getEntityType();
-			uav.maxSpeed = maxspeed;
-			uav.entityType = entityType;
-			if (!this.allSpeedsSaved) {
-				if (uavsHashMapHasSpeedForAll())
-					this.allSpeedsSaved = true;
-			}
-			if (maxspeed > fasterspeed) {
-				uavMappings.put(fasterUAVs[fasterUAVsIndex], id);
-				fasterUAVsIndex++;
-			} else {
-				uavMappings.put(slowerUAVs[slowerUAVsIndex], id);
-				slowerUAVsIndex++;
-			}
-
-		}
 		if (o instanceof afrl.cmasi.EntityState) {
 			EntityState myvehicle = ((EntityState) o);
 
