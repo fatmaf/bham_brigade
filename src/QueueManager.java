@@ -44,7 +44,7 @@ public class QueueManager {
 	public void setupWithCells(HashMap<Point, HashMap<String, Location3D>> points) {
 		// public Task(TaskType type, Location3D startSearch, Location3D endSearch, float priority) 
 		for(Point p: points.keySet()) {
-			Task t = new Task(Task.TaskType.SEARCH, points.get(p).get("bottomLeft"), points.get(p).get("topRight"), 50);
+			Task t = new Task(Task.TaskType.SEARCH, points.get(p).get("bottomLeft"), points.get(p).get("topRight"), 50,p);
 			addNewSearchTask(t);
 		}
 	}
@@ -70,6 +70,7 @@ public class QueueManager {
 			} else if(fireTasks.size() != 0) {
 				return getNextFireTask();
 			} else {
+				System.out.println("task null:"+uav.id);
 				return null;
 			}
 		} else {
@@ -78,6 +79,7 @@ public class QueueManager {
 			} else if(searchTasks.size() != 0) {
 				return getNextSearchTask();
 			} else {
+				System.out.println("task null:"+uav.id);
 				return null;
 			}
 		}

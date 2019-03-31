@@ -50,7 +50,7 @@ public class Challenge3 extends Thread {
 	HashMap<Long, Boolean> searching = new HashMap<>();
 	Polygon hazardPolygon = new Polygon();
 	HashMap<Long, Location3D> detectedLocs = new HashMap<>();
-	double R_EARTHKM = 6372.8;
+	double R_EARTHKM = 6372.8;//earth rad in km
 	KeepInZone keepinzone;
 	HashMap<Long, Boolean> hasTurned = new HashMap<>();
 	Location3D low_loc;
@@ -58,7 +58,7 @@ public class Challenge3 extends Thread {
 	ArrayList<UAVInfo> uavs = new ArrayList<>();
 	boolean setupPrioritiser = false;
 	QueueManager qm = new QueueManager();
-	double res = 10; //heatmap cells per cell side
+	double res = 20; // heatmap cells per cell side
 	PrioritiseCells prioritiser = new PrioritiseCells(res);
 
 	@Override
@@ -67,7 +67,7 @@ public class Challenge3 extends Thread {
 			// connect to the server
 			Socket socket = connect(host, port);
 			while (!prioritiser.isInitialised()) {
-				//dont get rid of this please 
+				// dont get rid of this please
 				System.out.println("waiting");
 
 			}
@@ -93,9 +93,8 @@ public class Challenge3 extends Thread {
 	public void readMessages(InputStream in, OutputStream out) throws Exception {
 		// Use each of the if statements to use the incoming message
 		LMCPObject o = LMCPFactory.getObject(in);
-		if(o instanceof afrl.cmasi.AirVehicleConfiguration)
-		{
-			AirVehicleConfiguration avc = ((AirVehicleConfiguration)o);
+		if (o instanceof afrl.cmasi.AirVehicleConfiguration) {
+			AirVehicleConfiguration avc = ((AirVehicleConfiguration) o);
 			long id = avc.getID();
 			UAVInfo currentUAV = getUAVInfo(id);
 			if (!flags.containsKey(id)) {
@@ -108,11 +107,15 @@ public class Challenge3 extends Thread {
 			AirVehicleState avs = ((AirVehicleState) o);
 			long id = avs.getID();
 			UAVInfo currentUAV = getUAVInfo(id);
-			if (id == 9)
-			System.out.println("id"+id+":"+avs.getLocation().getAltitude());
-			
+			currentUAV.currentLocation = avs.getLocation(); 
+//			if (id == 9)
+//			System.out.println("id"+id+":"+avs.getLocation().getAltitude());
+
 			if (flags.get(id).get(0) != flags.get(id).get(1)) { // Crossed boundary
-				if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
+				if (currentUAV.currentTask == null) {
+					// refuel
+				}
+				else if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
 					changeHeading(avs, id, out);
 				} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 					qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id));
@@ -125,15 +128,19 @@ public class Challenge3 extends Thread {
 				}
 
 			} else {
-				if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
+				if (currentUAV.currentTask == null) {
+					// Refuel
+				} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
 					changeHeading(avs, id, out);
 				} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
-					// leave in jsut in case
+					// leave in just in case
 				} else {
 					// Refuel
 				}
 			}
-			if (currentUAV.currentTask.isFinished()) { // Needs to be better, currently just count
+
+			if (currentUAV.currentTask != null && currentUAV.currentTask.isFinished(currentUAV.currentLocation)) { // Needs to be better,
+																							// currently just count
 				if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 					currentUAV.currentTask.priority = 0.0;
 					qm.addNewSearchTask(currentUAV.currentTask);
@@ -162,10 +169,8 @@ public class Challenge3 extends Thread {
 		if (uav.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 			Task currentTask = uav.getCurrentTask();
 			askUAVToSweep(out, uav.id, currentTask.startSearchLocation.getLatitude(),
-					currentTask.startSearchLocation.getLongitude(), 
-			currentTask.endSearchLocation.getLatitude(),
-			currentTask.endSearchLocation.getLongitude(),
-					 0.003);
+					currentTask.startSearchLocation.getLongitude(), currentTask.endSearchLocation.getLatitude(),
+					currentTask.endSearchLocation.getLongitude(), 0.03);
 //			Lat: 53.3837 Lon: -1.8272 Alt: 472 m
 //			Lat: 53.497 Lon: -1.7589 Alt: 447 m
 //			askUAVToSweep(out, uav.id, 53.3837,
@@ -199,8 +204,8 @@ public class Challenge3 extends Thread {
 		flags.put(id, l);
 		// state.put(id, State.SEARCHING);
 		UAVInfo uav = new UAVInfo(id);
-		uav.entityType = avs.getEntityType(); 
-		uav.currentTask=qm.requestNewTask(uav);
+		uav.entityType = avs.getEntityType();
+		uav.currentTask = qm.requestNewTask(uav);
 		System.out.println(uav.getCurrentTask().getTaskType());
 		startCurrentTask(out, uav);
 		System.out.println(uav.currentTask);
@@ -284,9 +289,9 @@ public class Challenge3 extends Thread {
 
 	public void handleHazard(HazardZoneDetection hzd) {
 		long id = hzd.getDetectingEnitiyID();
-		if (id == 2 || id == 3) {
-			System.out.println("here");
-		}
+//		if (id == 2 || id == 3) {
+//			System.out.println("here");
+//		}
 		flags.get(id).set(0, true);
 		detectedLocs.put(id, hzd.getDetectedLocation());
 
@@ -346,17 +351,7 @@ public class Challenge3 extends Thread {
 		return new Location3D(new_latitude, new_longitude, alt, alttype);
 	}
 
-// haversine in meters
-	public double haversine(double lat1, double lon1, double lat2, double lon2) {
-		double R = R_EARTHKM;
-		double dLat = Math.toRadians(lat2 - lat1);
-		double dLon = Math.toRadians(lon2 - lon1);
-		lat1 = Math.toRadians(lat1);
-		lat2 = Math.toRadians(lat2);
-		double a = Math.pow(Math.sin(dLat / 2), 2) + Math.pow(Math.sin(dLon / 2), 2) * Math.cos(lat1) * Math.cos(lat2);
-		double c = 2 * Math.asin(Math.sqrt(a));
-		return R * 1000.0 * c;
-	}
+
 
 	private static int getRandomNumberInRange(int min, int max) {
 
