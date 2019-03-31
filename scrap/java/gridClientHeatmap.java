@@ -48,9 +48,14 @@ import java.util.logging.Logger;
  */
 public class gridClientHeatmap extends Thread {
 	private static final double locError = 10;//in meters
+	double gridGranularityRelativeToHeatMapSide = 4;
+	double maxPriority = 100;
+	double unknownPriority = 50; 
+	
+	
 	public class Grid {
 
-	
+		
 		boolean isProtoBufGrid = false;
 		boolean gridInitialised = false;
 		double lat_high;
@@ -68,6 +73,17 @@ public class gridClientHeatmap extends Thread {
 			this.numCellsLat = numCellsLat;
 			this.numCellsLon = numCellsLon;
 			this.isProtoBufGrid = isProtobuf;
+			if (!this.isProtoBufGrid)
+			{
+				heatmap = new double[(int)this.numCellsLon][(int)this.numCellsLat]; 
+				for(int i = 0; i<numCellsLon; i++)
+				{
+					for(int j = 0; j<numCellsLat; j++)
+					{
+						heatmap[i][j]= unknownPriority; 
+					}
+				}
+			}
 
 		}
 
@@ -117,12 +133,12 @@ public class gridClientHeatmap extends Thread {
 			return loc;
 		}
 
-		ArrayList<Location3D> getLocTopBottom(Point cell) {
+		HashMap<String,Location3D> getLocTopBottom(Point cell) {
 			Location3D loc1 = pointToLocation(cell);
 			Location3D loc2 = createUpperBoundLocation(loc1);
-			ArrayList<Location3D> arr = new ArrayList<Location3D>();
-			arr.add(loc1);
-			arr.add(loc2);
+			HashMap<String,Location3D> arr = new HashMap<String,Location3D>();
+			arr.put("bottomLeft",loc1);
+			arr.put("topRight",loc2);
 			return arr;
 		}
 
@@ -186,8 +202,8 @@ public class gridClientHeatmap extends Thread {
 		// cell(1,0) = cells(res,0) through (res+res,res)
 		// so basically cell(x,y) = cells(x*res,y*res) through (x*res+res,y*res+res)
 
-		ArrayList<Point> gridToheatMap(Point gridPoint, int res) {
-			ArrayList<Point> pts = new ArrayList<Point>();
+		HashMap<String,Point> gridToheatMap(Point gridPoint, int res) {
+			HashMap<String,Point> pts = new HashMap<String,Point>();
 
 			int x = (int) (gridPoint.getX() * res);
 			int y = (int) (gridPoint.getY() * res);
@@ -195,8 +211,8 @@ public class gridClientHeatmap extends Thread {
 			x = x + res;
 			y = y + res;
 			Point p2 = new Point(x, y);
-			pts.add(p1);
-			pts.add(p2);
+			pts.put("bottomLeft",p1);
+			pts.put("topRight",p2);
 			return pts;
 
 		}
@@ -253,7 +269,7 @@ public class gridClientHeatmap extends Thread {
 	Grid grid;
 	Grid heatmapGrid;
 	boolean startMovement = false;
-	double gridGranularityRelativeToHeatMapSide = 4;
+	
 
 	boolean uavsHashMapHasSpeedForAll() {
 		int numSpeed = 0;
@@ -273,6 +289,69 @@ public class gridClientHeatmap extends Thread {
 		return numLoc == numUAVs;
 	}
 
+	public HashMap<Point,HashMap<String,Location3D>> getInitialGridPoints()
+	{
+		HashMap<Point,HashMap<String,Location3D>> initialPoints = new HashMap<Point,HashMap<String,Location3D>>(); 
+		for(int i = 0; i<grid.numCellsLon; i++)
+		{
+			for(int j = 0; j<grid.numCellsLat; i++)
+			{
+				Point p = new Point(i,j); 
+				HashMap<String,Location3D> rectPoints = grid.getLocTopBottom(p); 
+				initialPoints.put(p, rectPoints); 
+				
+			}
+		}
+		return initialPoints; 
+	}
+	public HashMap<Point,Double> getGridPriorities()
+	{
+		HashMap<Point,Double> priorities = new HashMap<Point,Double>(); 
+		for(int i = 0; i<grid.numCellsLon; i++)
+		{
+			for(int j = 0; j<grid.numCellsLat; i++)
+			{
+				Point p = new Point(i,j); 
+				priorities.put(p,grid.heatmap[i][j]);
+
+			}
+		}
+		return priorities; 
+		
+	}
+	
+	//doesnt really do anything right now 
+	//cuz I'm confused 
+	public void scanHeatMap()
+	{
+		//for each point in the grid 
+		for(int i = 0; i<grid.numCellsLon; i++)
+		{
+			for(int j=0; j<grid.numCellsLat; j++)
+			{
+				HashMap<String, Point> points = grid.gridToheatMap(new Point(i,j),(int) this.gridGranularityRelativeToHeatMapSide);
+				double sum = scanHeatMapCells(points.get("bottomLeft"),points.get("topRight"));
+				//updated 
+				//p = sum/(this.gridGranularityRelativeToHeatMapSide*this.gridGranularityRelativeToHeatMapSide)
+			}
+		}
+		//go over the heat map 
+		//add up the doubles 
+		
+		
+	}
+	public double scanHeatMapCells(Point bottomLeft, Point topRight)
+	{
+		double sum = 0; 
+		for(int i = (int) bottomLeft.getX(); i<topRight.getX(); i++)
+		{
+			for(int j = (int) bottomLeft.getY(); i<topRight.getY(); i++)
+			{
+				sum += this.heatmapGrid.heatmap[i][j]; 
+			}
+		}
+		return sum;
+	}
 	public gridClientHeatmap() {
 		uavs = new HashMap<Long, uavInfo>();
 		fuelLocations = new ArrayList<RecoveryPoint>();
