@@ -141,6 +141,7 @@ public class Challenge3 extends Thread {
     }
     
     public void startCurrentTask(OutputStream out, UAVInfo uav) throws Exception {
+    	System.out.print(uav.id);
     	if(uav.currentTask.getTaskType() == Task.TaskType.SEARCH) {
     		Task currentTask = uav.getCurrentTask();
     		askUAVToSweep(out, uav.id, currentTask.startSearchLocation.getLatitude(),currentTask.startSearchLocation.getLongitude(),
@@ -173,7 +174,12 @@ public class Challenge3 extends Thread {
     	l.add(false);
     	flags.put(id, l);
     	//state.put(id, State.SEARCHING);
-    	uavs.add(new UAVInfo(id));
+    	UAVInfo uav = new UAVInfo(id);
+    	qm.requestNewTask(uav);
+    	startCurrentTask(out, uav);
+    	System.out.println(uav.currentTask);
+    	uavs.add(uav);
+    	
     	setInitialHeading(id, out, false);
     }
     
