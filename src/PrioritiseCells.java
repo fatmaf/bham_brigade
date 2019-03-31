@@ -4,15 +4,15 @@ import java.util.HashMap;
 import afrl.cmasi.Location3D;
 
 public class PrioritiseCells {
-	ListenerChannel listenerChannel = null;
+	
 	Grid grid = null;
 	Grid heatmapGrid = null;
 	double resolution = 4; // heatmap cells per grid cell
 
 	public PrioritiseCells() {
-		heatmapGrid = null;
+//		heatmapGrid = null;
 //		grid = new Grid(100,100,false);
-		listenerChannel = new ListenerChannel();
+		ListenerChannel listenerChannel = new ListenerChannel();
 		listenerChannel.run(x -> {
 //			System.out.println("Received update at simulation time :" + x.getTime());
 			if (heatmapGrid == null) {
@@ -48,23 +48,31 @@ public class PrioritiseCells {
 
 	}
 
+	public boolean isInitialised()
+	{
+		return grid!=null;
+	}
 	public HashMap<Point, HashMap<String, Location3D>> getInitialGridPoints() {
 		HashMap<Point, HashMap<String, Location3D>> initialPoints = new HashMap<Point, HashMap<String, Location3D>>();
+//		if(grid!=null) {
+//			System.out.println("grid not null");
 		for (int i = 0; i < grid.numCellsLon; i++) {
-			for (int j = 0; j < grid.numCellsLat; i++) {
+			for (int j = 0; j < grid.numCellsLat; j++) {
 				Point p = new Point(i, j);
 				HashMap<String, Location3D> rectPoints = grid.getLocTopBottom(p);
 				initialPoints.put(p, rectPoints);
 
 			}
+//			}
 		}
+		System.out.println("Returning initial points");
 		return initialPoints;
 	}
 
 	public HashMap<Point, Double> getGridPriorities() {
 		HashMap<Point, Double> priorities = new HashMap<Point, Double>();
 		for (int i = 0; i < grid.numCellsLon; i++) {
-			for (int j = 0; j < grid.numCellsLat; i++) {
+			for (int j = 0; j < grid.numCellsLat; j++) {
 				Point p = new Point(i, j);
 				priorities.put(p, grid.heatmap[i][j]);
 
