@@ -18,10 +18,12 @@ public class QueueManager {
 	}
 	
 	private Task getNextSearchTask() {
+		searchTasks.get(0).hasReachedTask=false;
 		return this.searchTasks.remove(0);
 	}
 	
 	private Task getNextFireTask() {
+		fireTasks.get(0).hasReachedTask=false;
 		return this.fireTasks.remove(0);
 	}
 	
@@ -84,6 +86,7 @@ public class QueueManager {
 	}
 	// Check sort is correctly putting highest at start.
 	public Task requestNewTask(UAVInfo uav) {
+		
 		if(uav.entityType.equals("FixedWing")) {
 			if(searchTasks.size() != 0) {
 				return getNextSearchTask();

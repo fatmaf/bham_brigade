@@ -87,6 +87,7 @@ public class Grid {
 
 			return loc;
 		}
+		
 
 		HashMap<String,Location3D> getLocTopBottom(Point cell) {
 			Location3D loc1 = pointToLocation(cell);
@@ -97,6 +98,18 @@ public class Grid {
 			return arr;
 		}
 
+		HashMap<String,Location3D> getCornerLocations(Point cell) {
+			Location3D loc1 = pointToLocation(cell);
+			Location3D loc2 = createUpperBoundLocation(loc1);
+//			Location3D loc3 = 
+			HashMap<String,Location3D> arr = new HashMap<String,Location3D>();
+			arr.put("bottomLeft",loc1);
+			arr.put("topRight",loc2);
+			
+			return arr;
+		}
+
+				
 		// so if we have a resolution
 		// and its not a heatmap
 		// then you do nothing

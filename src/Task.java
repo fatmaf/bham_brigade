@@ -46,10 +46,19 @@ public class Task implements Comparable<Task> {
 	}
 
 	public Boolean isFinished(Location3D currLoc) {
-		double dist = 200;
+//		System.out.println("isFinished");
+		double dist = 200.0;
 		if (hasReachedTask)
 			count++;
 		if (this.type == TaskType.SEARCH) {
+//			double tempDist = Math.abs(haversine(this.startSearchLocation, currLoc)); 
+//			if (tempDist < 5000.0)
+//				{
+//				System.out.println("S:"+this.startSearchLocation.toString());
+//				System.out.println("E:"+currLoc.toString());
+//				System.out.println("Dist: "+tempDist);
+//				
+//				}
 			if (Math.abs(haversine(this.startSearchLocation, currLoc)) < dist) {
 				hasReachedTask = true;
 			}
@@ -94,7 +103,7 @@ public class Task implements Comparable<Task> {
 
 	@Override
 	public int compareTo(Task t) {
-		return Double.compare(priority, t.priority);
+		return Double.compare(t.priority, priority);
 	}
 
 	// haversine in meters

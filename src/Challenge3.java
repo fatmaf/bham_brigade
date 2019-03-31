@@ -42,7 +42,7 @@ public class Challenge3 extends Thread {
 		SEARCHING, MAPPING
 	}
 
-	private static final int numUntaskedUAVs =2;
+	private static final int numUntaskedUAVs = 2;
 
 	/** simulation TCP port to connect to */
 	private static int port = 5555;
@@ -125,20 +125,18 @@ public class Challenge3 extends Thread {
 					qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id), p);
 
 					qm.updatePriorities(prioritiser.getGridPriorities());
-					//see if fire q is not empty 
-					//if not empty 
-					//assign an untasked drone 
-					//take it out of the list 
-					if(qm.fireTasks.size()>0)
-					{
-						if(untaskedUAVS.size()>0)
-						{
-							//get first untaskedUAV
+					// see if fire q is not empty
+					// if not empty
+					// assign an untasked drone
+					// take it out of the list
+					if (qm.fireTasks.size() > 0) {
+						if (untaskedUAVS.size() > 0) {
+							// get first untaskedUAV
 							long freeUAV = untaskedUAVS.remove(0);
-							UAVInfo uavToAssign = getUAVInfo(freeUAV); 
+							UAVInfo uavToAssign = getUAVInfo(freeUAV);
 							uavToAssign.setCurrentTask(qm.requestNewTask(uavToAssign));
-							 startCurrentTask(out, uavToAssign);
-							
+							startCurrentTask(out, uavToAssign);
+
 						}
 					}
 					if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
@@ -165,7 +163,7 @@ public class Challenge3 extends Thread {
 					// Refuel
 				}
 			}
-
+//			System.out.println(id); 
 			if (currentUAV.currentTask != null && currentUAV.currentTask.isFinished(currentUAV.currentLocation)) { // Needs
 																													// to
 																													// be
@@ -230,25 +228,24 @@ public class Challenge3 extends Thread {
 
 	public void initialise_uav(long id, AirVehicleConfiguration avs, OutputStream out) throws IOException, Exception {
 		ArrayList<Boolean> l = new ArrayList<>();
-	
+
 		l.add(false);
 		l.add(false);
 		flags.put(id, l);
 		// state.put(id, State.SEARCHING);
 		UAVInfo uav = new UAVInfo(id);
 		uav.entityType = avs.getEntityType();
-		if(untaskedUAVS.size()<numUntaskedUAVs)
-		{
-			untaskedUAVS.add(id); 
-		}
-		else {
-		uav.currentTask = qm.requestNewTask(uav);
-		System.out.println(uav.getCurrentTask().getTaskType());
-		startCurrentTask(out, uav);
-		System.out.println(uav.currentTask);
+		if (!(uav.entityType.equals("FixedWing")) && (untaskedUAVS.size() < numUntaskedUAVs)) {
+
+			untaskedUAVS.add(id);
+
+		} else {
+			uav.currentTask = qm.requestNewTask(uav);
+			System.out.println(uav.getCurrentTask().getTaskType());
+			startCurrentTask(out, uav);
+			System.out.println(uav.currentTask);
 		}
 		uavs.add(uav);
-		
 
 //		setInitialHeading(id, out, false);
 	}
@@ -426,7 +423,7 @@ public class Challenge3 extends Thread {
 		double lon = startlon;
 		double longt1 = lon;
 
-		int ct = 0;
+		int ct = -1;
 		int rd = 1;
 		// Setting up the mission to send to the UAV
 
