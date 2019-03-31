@@ -9,9 +9,10 @@ public class PrioritiseCells {
 	Grid heatmapGrid = null;
 	double resolution = 4; // heatmap cells per grid cell
 
-	public PrioritiseCells() {
+	public PrioritiseCells(double res) {
 //		heatmapGrid = null;
 //		grid = new Grid(100,100,false);
+		resolution = res; 
 		ListenerChannel listenerChannel = new ListenerChannel();
 		listenerChannel.run(x -> {
 //			System.out.println("Received update at simulation time :" + x.getTime());
@@ -20,6 +21,7 @@ public class PrioritiseCells {
 				final int columns = x.getSize(1);
 				grid = new Grid((int) (columns / this.resolution), (int) (rows / this.resolution), false);
 				heatmapGrid = new Grid(columns, rows, true);
+
 				heatmapGrid.initialiseGrid(x.getMaxLat(), x.getMinLat(), x.getMaxLong(), x.getMinLong());
 				grid.initialiseGrid(x.getMaxLat(), x.getMinLat(), x.getMaxLong(), x.getMinLong());
 				heatmapGrid.heatmap = new double[rows][columns];
@@ -65,7 +67,8 @@ public class PrioritiseCells {
 			}
 //			}
 		}
-		System.out.println("Returning initial points");
+//		System.out.println("Returning initial points");
+//		System.out.println(initialPoints.get(new Point(0,0)).toString());
 		return initialPoints;
 	}
 

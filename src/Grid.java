@@ -47,6 +47,7 @@ public class Grid {
 		}
 
 		public void initialiseGrid(double max_lat, double min_lat, double max_lon, double min_lon) {
+
 			lat_high = max_lat;// high_loc.getLatitude();
 			lat_low = min_lat;// low_loc.getLatitude();
 			lon_high = max_lon;// high_loc.getLongitude();
@@ -55,6 +56,7 @@ public class Grid {
 			cellIncLat = (lat_high - lat_low) / (double) numCellsLat;
 			cellIncLon = (lon_high - lon_low) / (double) numCellsLon;
 			gridInitialised = true;
+//			System.out.println("initGrid"+lat_high+":"+lon_high+":"+cellIncLat);
 		}
 
 		public Point locationToGrid(Location3D loc) {

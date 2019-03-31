@@ -58,7 +58,8 @@ public class Challenge3 extends Thread {
 	ArrayList<UAVInfo> uavs = new ArrayList<>();
 	boolean setupPrioritiser = false;
 	QueueManager qm = new QueueManager();
-	PrioritiseCells prioritiser = new PrioritiseCells();
+	double res = 10; //heatmap cells per cell side
+	PrioritiseCells prioritiser = new PrioritiseCells(res);
 
 	@Override
 	public void run() {
@@ -103,10 +104,12 @@ public class Challenge3 extends Thread {
 
 		}
 		if (o instanceof afrl.cmasi.AirVehicleState) {
-			System.out.println("VehicleState msg");
+//			System.out.println("VehicleState msg");
 			AirVehicleState avs = ((AirVehicleState) o);
 			long id = avs.getID();
 			UAVInfo currentUAV = getUAVInfo(id);
+			if (id == 9)
+			System.out.println("id"+id+":"+avs.getLocation().getAltitude());
 			
 			if (flags.get(id).get(0) != flags.get(id).get(1)) { // Crossed boundary
 				if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
@@ -159,8 +162,15 @@ public class Challenge3 extends Thread {
 		if (uav.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 			Task currentTask = uav.getCurrentTask();
 			askUAVToSweep(out, uav.id, currentTask.startSearchLocation.getLatitude(),
-					currentTask.startSearchLocation.getLongitude(), currentTask.endSearchLocation.getLongitude(),
-					currentTask.endSearchLocation.getLatitude(), 0.015);
+					currentTask.startSearchLocation.getLongitude(), 
+			currentTask.endSearchLocation.getLatitude(),
+			currentTask.endSearchLocation.getLongitude(),
+					 0.003);
+//			Lat: 53.3837 Lon: -1.8272 Alt: 472 m
+//			Lat: 53.497 Lon: -1.7589 Alt: 447 m
+//			askUAVToSweep(out, uav.id, 53.3837,
+//					-1.8272 , 53.497,
+//					-1.7589, 0.015);
 		} else if (uav.currentTask.getTaskType() == Task.TaskType.MAP) {
 			// If fire is found en route, will start mapping that fire instead of target.
 			sendToWayPoint(out, uav.id, uav.currentTask.targetLocation, 30);
@@ -191,11 +201,12 @@ public class Challenge3 extends Thread {
 		UAVInfo uav = new UAVInfo(id);
 		uav.entityType = avs.getEntityType(); 
 		uav.currentTask=qm.requestNewTask(uav);
+		System.out.println(uav.getCurrentTask().getTaskType());
 		startCurrentTask(out, uav);
 		System.out.println(uav.currentTask);
 		uavs.add(uav);
 
-		setInitialHeading(id, out, false);
+//		setInitialHeading(id, out, false);
 	}
 
 //	public void initialise_uav(long id, AirVehicleState avs, OutputStream out) throws IOException, Exception {
@@ -436,8 +447,8 @@ public class Challenge3 extends Thread {
 
 			}
 
-			waypoint.setAltitude(150);
-			waypoint.setAltitudeType(AltitudeType.MSL);
+			waypoint.setAltitude(700);
+			waypoint.setAltitudeType(AltitudeType.AGL);
 			// Setting unique ID for the waypoint
 			waypoint.setNumber(ct);
 			waypoint.setNextWaypoint(ct + 1);
