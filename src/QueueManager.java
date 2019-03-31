@@ -37,7 +37,7 @@ public class QueueManager {
 		Collections.sort(fireTasks);
 	}
 	
-	public void notifyOfFire(Task currentTask, Location3D location,Point p) {
+	public void notifyOfFire(Task currentTask, Location3D location,Point p,Point detectedLocPoint) {
 		if(p == currentTask.hashPoint)
 		{
 			currentTask.priority = 100.0;
@@ -50,15 +50,36 @@ public class QueueManager {
 		//look through the search q 
 			//if point 
 			//put in fire q
+			boolean foundTask = false;
 			for(Task t: searchTasks)
 			{
-				if(t.hashPoint == p)
+				if(t.hashPoint == detectedLocPoint)
 				{
 					t.priority=100.0;
 					addNewFireTask(t);
 					searchTasks.remove(t); 
+					foundTask = true; 
 				}
 				//else someone else is searching or its already in the fire q
+			
+			}
+			if(!foundTask)
+			{
+				foundTask = false;
+				for(Task t: fireTasks)
+				{
+					if(t.hashPoint == detectedLocPoint)
+					{
+	 
+						foundTask = true; 
+					}
+					//else someone else is searching or its already in the fire q
+				
+				}
+				if(!foundTask) {
+				Task t = new Task(Task.TaskType.MAP,location, 100.0,detectedLocPoint);
+				addNewFireTask(t);
+				}
 			}
 		}
 	}

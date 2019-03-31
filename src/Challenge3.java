@@ -119,10 +119,15 @@ public class Challenge3 extends Thread {
 			if (flags.get(id).get(0) != flags.get(id).get(1)) { // Crossed boundary
 
 				if (currentUAV.currentTask == null) {
+					//go to current loc + offset 
+					Location3D loc = currentUAV.currentLocation; 
+					loc.setLatitude(loc.getLatitude()+0.01);
+					sendToWayPoint(out,id,loc,30);
 					// refuel
 				} else {
 					Point p = prioritiser.getLocationGrid(currentUAV.currentLocation);
-					qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id), p);
+					Point detectedLocCell =  prioritiser.getLocationGrid(detectedLocs.get(id));
+					qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id), p,detectedLocCell);
 
 					qm.updatePriorities(prioritiser.getGridPriorities());
 					// see if fire q is not empty
@@ -140,7 +145,10 @@ public class Challenge3 extends Thread {
 						}
 					}
 					if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
+						if(currentUAV.currentTask.hasReachedTask )
+						{
 						changeHeading(avs, id, out);
+						}
 					} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 
 						if (currentUAV.currentTask.hasReachedTask) {
@@ -156,7 +164,10 @@ public class Challenge3 extends Thread {
 				if (currentUAV.currentTask == null) {
 					// Refuel
 				} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
-					changeHeading(avs, id, out);
+					if(currentUAV.currentTask.hasReachedTask )
+					{changeHeading(avs, id, out);
+					
+					}
 				} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 					// leave in just in case
 				} else {
@@ -238,6 +249,7 @@ public class Challenge3 extends Thread {
 		if (!(uav.entityType.equals("FixedWing")) && (untaskedUAVS.size() < numUntaskedUAVs)) {
 
 			untaskedUAVS.add(id);
+			
 
 		} else {
 			uav.currentTask = qm.requestNewTask(uav);
@@ -518,13 +530,17 @@ public class Challenge3 extends Thread {
 		Waypoint wp = new Waypoint();
 		wp.setLatitude(location.getLatitude());
 		wp.setLongitude(location.getLongitude());
-		wp.setAltitude(2000);
+		wp.setAltitude(700);
+		wp.setAltitudeType(AltitudeType.AGL);
 
 		wp.setSpeed(speed);
 		wp.setNumber(1);
+		ArrayList<Waypoint> wplist = new ArrayList<Waypoint>();
+		wplist.add(wp);
 
+		mc.getWaypointList().clear();
 		mc.setFirstWaypoint(1);
-		mc.getWaypointList().add(wp);
+		mc.getWaypointList().addAll(wplist);
 		getUAVInfo(vehicleId).currentCommand = mc;
 		out.write(avtas.lmcp.LMCPFactory.packMessage(mc, true));
 	}
