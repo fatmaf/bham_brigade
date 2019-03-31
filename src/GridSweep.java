@@ -90,7 +90,8 @@ public class GridSweep extends Thread {
             if(sendMissionCommand==true) {
             	
             	askUAVToSweep(socket.getOutputStream(), 1, 53.3471, -2.0076,53.4262,-1.8879, 0.015);
-          
+            	
+            	
             
             }
             
@@ -315,6 +316,55 @@ public void readMessages(InputStream in, OutputStream out) throws Exception {
     
     
 }
+
+//check for charge
+
+public Boolean checkingForCharge(OutputStream out,InputStream in, int id)throws Exception{
+ 	Boolean go = false;
+ 	
+ LMCPObject o = LMCPFactory.getObject(in);
+ 
+ if (o instanceof afrl.cmasi.EntityState) {  
+    	EntityState myVehicle = ((EntityState) o);
+    	myVehicle.setID((id));
+    	float energyAvail = ((afrl.cmasi.EntityState) o).getEnergyAvailable();
+    	float pitch = ((afrl.cmasi.EntityState) o).getPitch();
+    	float energyrate = ((afrl.cmasi.EntityState) o).getActualEnergyRate();
+    	long vehicle_ID = ((afrl.cmasi.EntityState) o).getID();
+    	float vx =((afrl.cmasi.EntityState) o).getU();
+    	float vy =((afrl.cmasi.EntityState) o).getV();
+    	float vz = ((afrl.cmasi.EntityState) o).getW();
+    	float ax = ((afrl.cmasi.EntityState) o).getU();
+    	float ay = ((afrl.cmasi.EntityState) o).getVdot();
+    	float az = ((afrl.cmasi.EntityState) o).getWdot();
+    	Location3D loc = ((afrl.cmasi.EntityState) o).getLocation();
+    	long time =((afrl.cmasi.EntityState) o).getTime();
+    	
+    	//distance fro
+    	Location3D myLoc = ((afrl.cmasi.EntityState) o).getLocation();
+    	double distanceToChargingpoint = computeDistance(myLoc.getLatitude(),clat,myLoc.getLongitude(),clongt);
+    	double rate = 20/energyrate; //that is rate in m/%
+    	
+    	System.out.println("Avail in percent "+energyrate);
+    	
+    		if(energyAvail <= 50) {
+    			
+    			//stop the current mission
+    			//sendMissionCommand = false;
+    		// send UAV for charging
+    		go = true;
+    		
+    		//goForCharge(out,((afrl.cmasi.EntityState) o).getID(), c);
+    		
+    		}else {
+    			go = false;
+    		}
+    	}
+ return go;
+
+}
+
+
 
 
 
