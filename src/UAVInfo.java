@@ -24,4 +24,8 @@ public class UAVInfo {
 		this.currentTask = t;
 	}
 	
+	public Task getCurrentTask() {
+		return this.currentTask;
+	}
+	
 }

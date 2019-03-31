@@ -10,11 +10,13 @@ public class Task implements Comparable<Task>{
 	}
 	
 	private TaskType type;
-	private Location3D targetLocation;
-	private Location3D startSearchLocation;
-	private Location3D endSearchLocation;
+	public Location3D targetLocation;
+	public Location3D startSearchLocation;
+	public Location3D endSearchLocation;
 	public float priority;
 	private Point hashPoint;
+	
+	public int count = 0;
 	
 	public Task(TaskType type, Location3D targetLocation, float priority) {
 		this.type = type;
@@ -39,6 +41,14 @@ public class Task implements Comparable<Task>{
 	
 	public TaskType getTaskType() {
 		return this.type;
+	}
+	
+	public Boolean isFinished() {
+		count++;
+		if(count % 50 == 0) {
+			return true;
+		}
+		return false;
 	}
 	
 	public void setTaskType(TaskType t) {
