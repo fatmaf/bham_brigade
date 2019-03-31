@@ -57,6 +57,7 @@ public class Challenge3 extends Thread {
     ArrayList<UAVInfo> uavs = new ArrayList<>();
     
     QueueManager qm = new QueueManager();
+    PrioritiseCells prioritiser = new PrioritiseCells();
     
 
     
@@ -66,8 +67,7 @@ public class Challenge3 extends Thread {
             // connect to the server
             Socket socket = connect(host, port);
             
-            // getSearchCells();
-            //qm.setupWithCells(points);
+            qm.setupWithCells(priotiser.getInitialGridPoints());
             
 
             while(true) {
@@ -99,6 +99,9 @@ public class Challenge3 extends Thread {
     				changeHeading(avs, id, out);
     			} else if(currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
     				qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id));
+    				
+    				qm.updatePriorities(prioritise.getGridPrioritise())
+    				
     				currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
     			} else {
     				// Refuel
@@ -114,6 +117,13 @@ public class Challenge3 extends Thread {
     			}
         	}
     		if(currentUAV.currentTask.isFinished()) { // Needs to be better, currently just count
+    			if(currentUAV.currentTask == Task.TaskType.SEARCH) {
+    				currentUAV.currentTask.priority = 0;
+    				qm.addNewSearchTask(currentUAV.currentTask);
+    			} else if(currentUAV.currentTask == Task.TaskType.SEARCH) {
+    				currentUAV.currentTask.priority = 0;
+    				qm.addNewFireTask(currentUAV.currentTask);
+    			}
 				currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
 			}
         }

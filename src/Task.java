@@ -14,7 +14,7 @@ public class Task implements Comparable<Task>{
 	public Location3D startSearchLocation;
 	public Location3D endSearchLocation;
 	public float priority;
-	private Point hashPoint;
+	public Point hashPoint;
 	
 	public int count = 0;
 	
