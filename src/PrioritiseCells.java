@@ -85,6 +85,10 @@ public class PrioritiseCells {
 
 	}
 
+	public Point getLocationGrid(Location3D loc)
+	{
+		return grid.locationToGrid(loc); 
+	}
 	// doesnt really do anything right now
 	// cuz I'm confused
 	public void scanHeatMap() {

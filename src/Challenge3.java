@@ -23,6 +23,8 @@ import afrl.cmasi.Polygon;
 import afrl.cmasi.Rectangle;
 import avtas.lmcp.LMCPFactory;
 import avtas.lmcp.LMCPObject;
+
+import java.awt.Point;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -40,6 +42,8 @@ public class Challenge3 extends Thread {
 		SEARCHING, MAPPING
 	}
 
+	private static final int numUntaskedUAVs =2;
+
 	/** simulation TCP port to connect to */
 	private static int port = 5555;
 	/** address of the server */
@@ -50,16 +54,17 @@ public class Challenge3 extends Thread {
 	HashMap<Long, Boolean> searching = new HashMap<>();
 	Polygon hazardPolygon = new Polygon();
 	HashMap<Long, Location3D> detectedLocs = new HashMap<>();
-	double R_EARTHKM = 6372.8;//earth rad in km
+	double R_EARTHKM = 6372.8;// earth rad in km
 	KeepInZone keepinzone;
 	HashMap<Long, Boolean> hasTurned = new HashMap<>();
 	Location3D low_loc;
 	Location3D high_loc;
-	ArrayList<UAVInfo> uavs = new ArrayList<>();
+	ArrayList<UAVInfo> uavs = new ArrayList<UAVInfo>();
 	boolean setupPrioritiser = false;
 	QueueManager qm = new QueueManager();
 	double res = 20; // heatmap cells per cell side
 	PrioritiseCells prioritiser = new PrioritiseCells(res);
+	ArrayList<Long> untaskedUAVS = new ArrayList<Long>();
 
 	@Override
 	public void run() {
@@ -107,24 +112,46 @@ public class Challenge3 extends Thread {
 			AirVehicleState avs = ((AirVehicleState) o);
 			long id = avs.getID();
 			UAVInfo currentUAV = getUAVInfo(id);
-			currentUAV.currentLocation = avs.getLocation(); 
+			currentUAV.currentLocation = avs.getLocation();
 //			if (id == 9)
 //			System.out.println("id"+id+":"+avs.getLocation().getAltitude());
 
 			if (flags.get(id).get(0) != flags.get(id).get(1)) { // Crossed boundary
+
 				if (currentUAV.currentTask == null) {
 					// refuel
-				}
-				else if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
-					changeHeading(avs, id, out);
-				} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
-					qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id));
+				} else {
+					Point p = prioritiser.getLocationGrid(currentUAV.currentLocation);
+					qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id), p);
 
 					qm.updatePriorities(prioritiser.getGridPriorities());
+					//see if fire q is not empty 
+					//if not empty 
+					//assign an untasked drone 
+					//take it out of the list 
+					if(qm.fireTasks.size()>0)
+					{
+						if(untaskedUAVS.size()>0)
+						{
+							//get first untaskedUAV
+							long freeUAV = untaskedUAVS.remove(0);
+							UAVInfo uavToAssign = getUAVInfo(freeUAV); 
+							uavToAssign.setCurrentTask(qm.requestNewTask(uavToAssign));
+							 startCurrentTask(out, uavToAssign);
+							
+						}
+					}
+					if (currentUAV.currentTask.getTaskType() == Task.TaskType.MAP) {
+						changeHeading(avs, id, out);
+					} else if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 
-					currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
-				} else {
-					// Refuel
+						if (currentUAV.currentTask.hasReachedTask) {
+							currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
+							startCurrentTask(out, currentUAV);
+						}
+					} else {
+						// Refuel
+					}
 				}
 
 			} else {
@@ -139,8 +166,11 @@ public class Challenge3 extends Thread {
 				}
 			}
 
-			if (currentUAV.currentTask != null && currentUAV.currentTask.isFinished(currentUAV.currentLocation)) { // Needs to be better,
-																							// currently just count
+			if (currentUAV.currentTask != null && currentUAV.currentTask.isFinished(currentUAV.currentLocation)) { // Needs
+																													// to
+																													// be
+																													// better,
+				// currently just count
 				if (currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
 					currentUAV.currentTask.priority = 0.0;
 					qm.addNewSearchTask(currentUAV.currentTask);
@@ -149,6 +179,7 @@ public class Challenge3 extends Thread {
 					qm.addNewFireTask(currentUAV.currentTask);
 				}
 				currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
+				startCurrentTask(out, currentUAV);
 			}
 		}
 
@@ -199,17 +230,25 @@ public class Challenge3 extends Thread {
 
 	public void initialise_uav(long id, AirVehicleConfiguration avs, OutputStream out) throws IOException, Exception {
 		ArrayList<Boolean> l = new ArrayList<>();
+	
 		l.add(false);
 		l.add(false);
 		flags.put(id, l);
 		// state.put(id, State.SEARCHING);
 		UAVInfo uav = new UAVInfo(id);
 		uav.entityType = avs.getEntityType();
+		if(untaskedUAVS.size()<numUntaskedUAVs)
+		{
+			untaskedUAVS.add(id); 
+		}
+		else {
 		uav.currentTask = qm.requestNewTask(uav);
 		System.out.println(uav.getCurrentTask().getTaskType());
 		startCurrentTask(out, uav);
 		System.out.println(uav.currentTask);
+		}
 		uavs.add(uav);
+		
 
 //		setInitialHeading(id, out, false);
 	}
@@ -350,8 +389,6 @@ public class Challenge3 extends Thread {
 				+ (dx / (R_EARTHKM * 1000)) * (180 / Math.PI) / Math.cos(latitude * Math.PI / 180);
 		return new Location3D(new_latitude, new_longitude, alt, alttype);
 	}
-
-
 
 	private static int getRandomNumberInRange(int min, int max) {
 

@@ -10,7 +10,7 @@ import afrl.cmasi.Location3D;
 public class QueueManager {
 	
 	private ArrayList<Task> searchTasks;
-	private ArrayList<Task> fireTasks;
+	public ArrayList<Task> fireTasks;
 	
 	public QueueManager() {
 		this.searchTasks = new ArrayList<>();
@@ -35,10 +35,30 @@ public class QueueManager {
 		Collections.sort(fireTasks);
 	}
 	
-	public void notifyOfFire(Task currentTask, Location3D location) {
+	public void notifyOfFire(Task currentTask, Location3D location,Point p) {
+		if(p == currentTask.hashPoint)
+		{
+			currentTask.priority = 100.0;
 		currentTask.setTaskType(Task.TaskType.MAP);
 		currentTask.setTargetLocation(location);
 		addNewFireTask(currentTask);
+		}
+		else
+		{
+		//look through the search q 
+			//if point 
+			//put in fire q
+			for(Task t: searchTasks)
+			{
+				if(t.hashPoint == p)
+				{
+					t.priority=100.0;
+					addNewFireTask(t);
+					searchTasks.remove(t); 
+				}
+				//else someone else is searching or its already in the fire q
+			}
+		}
 	}
 	
 	public void setupWithCells(HashMap<Point, HashMap<String, Location3D>> points) {

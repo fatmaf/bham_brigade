@@ -46,26 +46,32 @@ public class Task implements Comparable<Task> {
 	}
 
 	public Boolean isFinished(Location3D currLoc) {
+		double dist = 200;
 		if (hasReachedTask)
 			count++;
 		if (this.type == TaskType.SEARCH) {
-			// compare current location to end search
-			if (Math.abs(haversine(this.endSearchLocation, currLoc)) < 200) {
-				System.out.println("Search finished"); 
-				return true;
-			} else {
-				return false;
+			if (Math.abs(haversine(this.startSearchLocation, currLoc)) < dist) {
+				hasReachedTask = true;
+			}
+			if (hasReachedTask) {
+				// compare current location to end search
+				if (Math.abs(haversine(this.endSearchLocation, currLoc)) < dist) {
+					System.out.println("Search finished");
+					return true;
+				} else {
+					return false;
+				}
 			}
 
 		} else if (this.type == TaskType.MAP) {
 
-			if (!hasReachedTask && Math.abs(haversine(this.targetLocation, currLoc)) < 20) {
+			if (!hasReachedTask && Math.abs(haversine(this.targetLocation, currLoc)) < dist) {
 				hasReachedTask = true;
 				// firecounter flag = true
 			}
 			if (hasReachedTask) {
 				if (count % 50 == 0) {
-					
+
 					return true;
 				}
 				return false;
