@@ -84,8 +84,14 @@ public class PrioritiseCells {
 						(int) this.resolution);
 				double sum = scanHeatMapCells(points.get("bottomLeft"), points.get("topRight"));
 				// updated
-				// p =
-				// sum/(this.gridGranularityRelativeToHeatMapSide*this.gridGranularityRelativeToHeatMapSide)
+				double percentage = sum/(this.resolution*this.resolution); 
+				double priority = 0; 
+				if(percentage < 100)
+				{
+					priority = 50.0*percentage/100.0; 
+				}
+				grid.heatmap[i][j]=priority;
+				
 			}
 		}
 		// go over the heat map
