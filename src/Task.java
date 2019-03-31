@@ -13,25 +13,25 @@ public class Task implements Comparable<Task>{
 	public Location3D targetLocation;
 	public Location3D startSearchLocation;
 	public Location3D endSearchLocation;
-	public float priority;
+	public Double priority;
 	public Point hashPoint;
 	
 	public int count = 0;
 	
-	public Task(TaskType type, Location3D targetLocation, float priority) {
+	public Task(TaskType type, Location3D targetLocation, double priority) {
 		this.type = type;
 		this.targetLocation = targetLocation;
 		this.priority = priority;
 	}
 	
-	public Task(TaskType type, Location3D startSearch, Location3D endSearch, float priority) {
+	public Task(TaskType type, Location3D startSearch, Location3D endSearch, double priority) {
 		this.type = type;
 		this.startSearchLocation = startSearch;
 		this.endSearchLocation = endSearch;
 		this.priority = priority;
 	}
 	
-	public Task(TaskType type, Location3D targetLocation, Location3D startSearch, Location3D endSearch, float priority) {
+	public Task(TaskType type, Location3D targetLocation, Location3D startSearch, Location3D endSearch, double priority) {
 		this.type = type;
 		this.targetLocation = targetLocation;
 		this.startSearchLocation = startSearch;
@@ -61,7 +61,7 @@ public class Task implements Comparable<Task>{
 	
 	@Override
 	public int compareTo(Task t) {
-		return Float.compare(priority, t.priority);
+		return Double.compare(priority, t.priority);
 	}
 	
 }

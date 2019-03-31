@@ -67,7 +67,7 @@ public class Challenge3 extends Thread {
             // connect to the server
             Socket socket = connect(host, port);
             
-            qm.setupWithCells(priotiser.getInitialGridPoints());
+            qm.setupWithCells(prioritiser.getInitialGridPoints());
             
 
             while(true) {
@@ -76,7 +76,7 @@ public class Challenge3 extends Thread {
             }
 
         } catch (Exception ex) {
-            Logger.getLogger(challenge2.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Challenge3.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
@@ -100,7 +100,7 @@ public class Challenge3 extends Thread {
     			} else if(currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
     				qm.notifyOfFire(currentUAV.currentTask, detectedLocs.get(id));
     				
-    				qm.updatePriorities(prioritise.getGridPrioritise())
+    				qm.updatePriorities(prioritiser.getGridPriorities());
     				
     				currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
     			} else {
@@ -117,11 +117,11 @@ public class Challenge3 extends Thread {
     			}
         	}
     		if(currentUAV.currentTask.isFinished()) { // Needs to be better, currently just count
-    			if(currentUAV.currentTask == Task.TaskType.SEARCH) {
-    				currentUAV.currentTask.priority = 0;
+    			if(currentUAV.currentTask.getTaskType() == Task.TaskType.SEARCH) {
+    				currentUAV.currentTask.priority = 0.0;
     				qm.addNewSearchTask(currentUAV.currentTask);
-    			} else if(currentUAV.currentTask == Task.TaskType.SEARCH) {
-    				currentUAV.currentTask.priority = 0;
+    			} else if(currentUAV.currentTask.getTaskType()== Task.TaskType.SEARCH) {
+    				currentUAV.currentTask.priority = 0.0;
     				qm.addNewFireTask(currentUAV.currentTask);
     			}
 				currentUAV.setCurrentTask(qm.requestNewTask(currentUAV));
